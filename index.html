@@ -1,111 +1,260 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>BuyMe Catalog Sorter</title>
-  <meta name="description" content="Search, filter, sort, and export Israeli businesses that accept BuyMe gift cards.">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BUYME Catalog Sorter</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
-    :root{--bg:#f6f7f9;--panel:#fff;--text:#17202a;--muted:#667085;--line:#d8dee8;--accent:#0f766e;--accent2:#115e59;--warn:#9a3412;--shadow:0 12px 28px rgba(15,23,42,.08)}
-    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.45}a{color:var(--accent2)}.shell{max-width:1480px;margin:0 auto;padding:28px}header{display:flex;justify-content:space-between;gap:24px;align-items:flex-start;margin-bottom:20px}h1{margin:0 0 8px;font-size:34px;line-height:1.1;letter-spacing:0}.lede{margin:0;max-width:760px;color:var(--muted);font-size:16px}.actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end}button,select,input{font:inherit}button{border:1px solid var(--line);background:var(--panel);color:var(--text);min-height:40px;padding:9px 13px;border-radius:7px;cursor:pointer}button.primary{background:var(--accent);border-color:var(--accent);color:#fff}button:hover{border-color:var(--accent)}button.primary:hover{background:var(--accent2)}.stats{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:12px;margin:18px 0}.stat{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;box-shadow:var(--shadow)}.stat span{display:block;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}.stat strong{display:block;margin-top:4px;font-size:24px}.controls{display:grid;grid-template-columns:minmax(220px,2fr) repeat(5,minmax(150px,1fr));gap:10px;margin:16px 0;align-items:end}label{display:grid;gap:5px;color:var(--muted);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}input,select{width:100%;min-height:40px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--text);padding:8px 10px;text-transform:none;letter-spacing:0}.notice{border:1px solid #fed7aa;background:#fff7ed;color:var(--warn);border-radius:8px;padding:12px 14px;margin:14px 0;font-size:14px}.table-wrap{background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);overflow:auto;max-height:68vh}table{width:100%;border-collapse:collapse;min-width:1280px}th,td{border-bottom:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top;font-size:14px}th{position:sticky;top:0;z-index:1;background:#eef3f7;color:#344054;cursor:pointer;user-select:none;white-space:nowrap}td[data-rtl=true]{direction:rtl;text-align:right}.name-cell{min-width:220px;font-weight:700}.subtle{display:block;margin-top:3px;color:var(--muted);font-size:12px;font-weight:400}.chips{display:flex;flex-wrap:wrap;gap:5px;max-width:260px}.chip{border:1px solid var(--line);border-radius:999px;padding:2px 8px;background:#f8fafc;font-size:12px;white-space:nowrap}.empty{padding:36px;text-align:center;color:var(--muted)}footer{color:var(--muted);font-size:13px;margin-top:16px}@media(max-width:980px){.shell{padding:18px}header{display:block}.actions{justify-content:flex-start;margin-top:16px}.stats{grid-template-columns:repeat(2,minmax(140px,1fr))}.controls{grid-template-columns:1fr 1fr}}@media(max-width:620px){h1{font-size:28px}.stats,.controls{grid-template-columns:1fr}button{width:100%}}
+    :root { color-scheme: light dark; --bg:#f5f7fb; --panel:#fff; --text:#172033; --muted:#67738a; --line:#dce2ec; --accent:#7a3cff; --accent2:#efe9ff; --danger:#b42318; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#11141b; --panel:#191e28; --text:#eef2fa; --muted:#aab4c7; --line:#303847; --accent:#ad8cff; --accent2:#2c2440; --danger:#ff9b91; } }
+    * { box-sizing: border-box; }
+    body { margin:0; font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif; background:var(--bg); color:var(--text); }
+    header { padding:22px 24px 16px; background:var(--panel); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; }
+    h1 { margin:0 0 5px; font-size:23px; }
+    .sub { color:var(--muted); }
+    main { padding:18px 24px 30px; }
+    .toolbar { display:grid; grid-template-columns:minmax(230px,2fr) repeat(5,minmax(135px,1fr)); gap:10px; margin-bottom:10px; }
+    input, select, button { font:inherit; border:1px solid var(--line); border-radius:9px; padding:9px 10px; background:var(--panel); color:var(--text); }
+    button { cursor:pointer; font-weight:650; }
+    button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+    button:disabled { opacity:.5; cursor:not-allowed; }
+    .actions { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:10px 0; }
+    .status { margin-left:auto; color:var(--muted); }
+    .cards { display:grid; grid-template-columns:repeat(4,minmax(130px,1fr)); gap:10px; margin:12px 0; }
+    .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
+    .card b { font-size:20px; display:block; }
+    .card span { color:var(--muted); }
+    .table-wrap { overflow:auto; border:1px solid var(--line); border-radius:12px; background:var(--panel); max-height:68vh; }
+    table { border-collapse:separate; border-spacing:0; width:max-content; min-width:100%; }
+    th, td { padding:9px 10px; border-bottom:1px solid var(--line); border-right:1px solid var(--line); vertical-align:top; max-width:310px; }
+    th { position:sticky; top:0; z-index:2; background:var(--panel); text-align:left; white-space:nowrap; cursor:pointer; user-select:none; }
+    th:last-child, td:last-child { border-right:0; }
+    tr:last-child td { border-bottom:0; }
+    tbody tr:hover { background:var(--accent2); }
+    td.rtl { direction:rtl; text-align:right; }
+    .pill { display:inline-block; padding:2px 7px; border-radius:999px; background:var(--accent2); margin:1px 2px; white-space:nowrap; }
+    .yes { font-weight:700; }
+    .unknown { color:var(--muted); }
+    a { color:var(--accent); }
+    .pager { display:flex; align-items:center; gap:8px; margin-top:10px; }
+    .pager .page-info { color:var(--muted); }
+    dialog { width:min(900px,94vw); max-height:88vh; border:1px solid var(--line); border-radius:14px; background:var(--panel); color:var(--text); padding:0; }
+    dialog::backdrop { background:rgba(0,0,0,.55); }
+    .modal-head { position:sticky; top:0; background:var(--panel); padding:15px 18px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:10px; }
+    .modal-head h2 { margin:0; flex:1; }
+    .modal-body { padding:17px 18px; }
+    .detail-grid { display:grid; grid-template-columns:160px 1fr; gap:8px 12px; }
+    .detail-grid dt { color:var(--muted); font-weight:650; }
+    .detail-grid dd { margin:0; overflow-wrap:anywhere; }
+    .long { white-space:pre-wrap; direction:rtl; text-align:right; }
+    .error { color:var(--danger); font-weight:650; }
+    .source-note { color:var(--muted); font-size:12px; margin-top:8px; }
+    @media(max-width:1050px){ .toolbar{grid-template-columns:repeat(2,minmax(0,1fr));}.cards{grid-template-columns:repeat(2,1fr)} }
   </style>
 </head>
 <body>
-  <main class="shell">
-    <header>
-      <div>
-        <h1>BuyMe Catalog Sorter</h1>
-        <p class="lede">Search, filter, sort, and export businesses that accept BuyMe gift cards in Israel.</p>
-      </div>
-      <div class="actions">
-        <button id="refreshButton" type="button">Refresh</button>
-        <button id="csvButton" type="button">Export filtered CSV</button>
-        <button id="excelButton" class="primary" type="button">Export Excel</button>
-      </div>
-    </header>
+<header>
+  <h1>BUYME Catalog Sorter</h1>
+  <div class="sub">Search, filter, sort, inspect and export the full BUYME ALL business catalog.</div>
+</header>
+<main>
+  <div class="toolbar">
+    <input id="search" type="search" placeholder="Search name, description, address, category…" />
+    <select id="category"><option value="">All categories</option></select>
+    <select id="subcategory"><option value="">All subcategories</option></select>
+    <select id="region"><option value="">All regions</option></select>
+    <select id="online"><option value="">Online: all</option><option value="true">Online redemption</option><option value="false">In-store only</option></select>
+    <select id="multi"><option value="">Multiple vouchers: all</option><option value="true">Accepted</option><option value="false">Not accepted</option><option value="unknown">Unknown</option></select>
+  </div>
 
-    <section class="stats" aria-label="Catalog summary">
-      <div class="stat"><span>Visible businesses</span><strong id="visibleCount">-</strong></div>
-      <div class="stat"><span>Total businesses</span><strong id="totalCount">-</strong></div>
-      <div class="stat"><span>Products</span><strong id="productCount">-</strong></div>
-      <div class="stat"><span>Last loaded</span><strong id="loadedAt">-</strong></div>
-    </section>
+  <div class="actions">
+    <button class="primary" id="refresh">Refresh catalog</button>
+    <button id="csv" disabled>Export filtered CSV</button>
+    <button id="xlsx" disabled>Export full Excel</button>
+    <label>Rows: <select id="pageSize"><option>50</option><option selected>100</option><option>250</option><option value="999999">All</option></select></label>
+    <span class="status" id="status">Loading…</span>
+  </div>
 
-    <section class="controls" aria-label="Filters">
-      <label>Search <input id="searchInput" type="search" placeholder="Business, category, region, phone, terms..."></label>
-      <label>Category <select id="categoryFilter"><option value="">All categories</option></select></label>
-      <label>Subcategory <select id="subcategoryFilter"><option value="">All subcategories</option></select></label>
-      <label>Region <select id="regionFilter"><option value="">All regions</option></select></label>
-      <label>Online <select id="onlineFilter"><option value="">Any</option><option value="yes">Online redemption</option><option value="no">In-person only</option></select></label>
-      <label>Multiple vouchers <select id="multiFilter"><option value="">Any</option><option value="yes">Accepted</option><option value="no">Not accepted</option></select></label>
-    </section>
+  <div class="cards">
+    <div class="card"><b id="shownCount">—</b><span>matching businesses</span></div>
+    <div class="card"><b id="allCount">—</b><span>total businesses</span></div>
+    <div class="card"><b id="onlineCount">—</b><span>online redemption</span></div>
+    <div class="card"><b id="productCount">—</b><span>fixed-price products</span></div>
+  </div>
 
-    <div id="status" class="notice">Loading catalog...</div>
+  <div class="table-wrap">
+    <table id="table">
+      <thead></thead><tbody></tbody>
+    </table>
+  </div>
+  <div class="pager">
+    <button id="prev">Previous</button><button id="next">Next</button><span class="page-info" id="pageInfo"></span>
+  </div>
+  <div class="source-note">Data source: public BuyMe catalog mirror refreshed weekly from BuyMe's public endpoints. Always verify current redemption terms on the official BuyMe page.</div>
+</main>
 
-    <section class="table-wrap" aria-label="BuyMe businesses table">
-      <table>
-        <thead><tr>
-          <th data-sort="name">Business</th><th data-sort="categoriesText">Categories</th><th data-sort="regionsText">Regions</th><th data-sort="onlineRedeem">Online</th><th data-sort="voucherMin">Voucher min</th><th data-sort="voucherMax">Voucher max</th><th data-sort="acceptsMultipleVouchers">Multiple vouchers</th><th data-sort="productCount">Products</th><th data-sort="phone">Phone</th><th data-sort="address">Address</th><th data-sort="url">Links</th>
-        </tr></thead>
-        <tbody id="tableBody"><tr><td colspan="11" class="empty">Loading...</td></tr></tbody>
-      </table>
-    </section>
+<dialog id="details">
+  <div class="modal-head"><h2 id="detailTitle"></h2><button id="close">Close</button></div>
+  <div class="modal-body" id="detailBody"></div>
+</dialog>
 
-    <footer>Data comes from an unofficial community mirror of public BuyMe catalog data. Verify prices, terms, and participating businesses on the official BuyMe site before relying on them.</footer>
-  </main>
+<script>
+(() => {
+  'use strict';
+  const DATA_URL = 'https://raw.githubusercontent.com/eladkishon/buyme-mcp/refs/heads/main/data/buyme.json';
+  const BUYME_PAGE = 'https://buyme.co.il/brands/13438757';
+  const $ = id => document.getElementById(id);
+  const state = { data:null, businesses:[], filtered:[], sortKey:'name', sortDir:1, page:1, pageSize:100 };
 
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script>
-    const DATA_URL='https://raw.githubusercontent.com/eladkishon/buyme-mcp/main/data/buyme.json';
-    const state={raw:null,rows:[],filtered:[],sortKey:'name',sortDir:'asc'};
-    const $=id=>document.getElementById(id);
-    const els={status:$('status'),visibleCount:$('visibleCount'),totalCount:$('totalCount'),productCount:$('productCount'),loadedAt:$('loadedAt'),tableBody:$('tableBody'),searchInput:$('searchInput'),categoryFilter:$('categoryFilter'),subcategoryFilter:$('subcategoryFilter'),regionFilter:$('regionFilter'),onlineFilter:$('onlineFilter'),multiFilter:$('multiFilter'),refreshButton:$('refreshButton'),csvButton:$('csvButton'),excelButton:$('excelButton')};
-    const list=v=>Array.isArray(v)?v.filter(Boolean):[];
-    const html=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
-    const yn=v=>v?'Yes':'No';
-    const money=v=>Number.isFinite(Number(v))?'₪'+Number(v).toLocaleString('he-IL'):'';
-    function normalize(b){
-      const categories=list(b.categories),subcategories=list(b.subcategories),regions=list(b.regions),products=list(b.products);
-      return {id:b.id,name:b.name||'',slogan:b.slogan||'',categories,categoriesText:categories.join(', '),subcategories,subcategoriesText:subcategories.join(', '),regions,regionsText:regions.join(', '),onlineRedeem:Boolean(b.onlineRedeem||b.onlineRedeemMoney),voucherMin:b.voucher?.min??'',voucherMax:b.voucher?.max??'',acceptsMultipleVouchers:Boolean(b.acceptsMultipleVouchers),paymentWay:b.paymentWay||'',productCount:Number(b.productCount??products.length??0),phone:b.phone||'',email:b.email||'',address:b.address||'',website:b.website||'',url:b.url||'',storeLocatorUrl:b.storeLocatorUrl||'',reservationUrl:b.reservationUrl||'',instagram:b.instagram||'',facebook:b.facebook||'',terms:b.terms||'',about:b.about||'',products,searchBlob:[b.name,b.slogan,b.phone,b.email,b.address,b.terms,b.about,categories.join(' '),subcategories.join(' '),regions.join(' '),list(b.searchTerms).join(' ')].filter(Boolean).join(' ').toLowerCase()};
-    }
-    function optionList(rows,key){return [...new Set(rows.flatMap(r=>r[key]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'he'))}
-    function fillSelect(sel,options,label){const current=sel.value;sel.innerHTML=`<option value="">${label}</option>`+options.map(o=>`<option value="${html(o)}">${html(o)}</option>`).join('');if(options.includes(current))sel.value=current}
-    function status(msg,kind='info'){els.status.textContent=msg;els.status.style.display=msg?'block':'none';els.status.style.borderColor=kind==='error'?'#fecaca':'#fed7aa';els.status.style.background=kind==='error'?'#fef2f2':'#fff7ed';els.status.style.color=kind==='error'?'#991b1b':'#9a3412'}
-    async function loadCatalog(){
-      status('Loading catalog...');
-      const res=await fetch(`${DATA_URL}?t=${Date.now()}`,{cache:'no-store'});
-      if(!res.ok)throw new Error(`Catalog request failed: ${res.status}`);
-      const raw=await res.json();state.raw=raw;state.rows=list(raw.businesses).map(normalize);
-      fillSelect(els.categoryFilter,optionList(state.rows,'categories'),'All categories');
-      fillSelect(els.subcategoryFilter,optionList(state.rows,'subcategories'),'All subcategories');
-      fillSelect(els.regionFilter,optionList(state.rows,'regions'),'All regions');
-      els.totalCount.textContent=Number(raw.businessCount||state.rows.length).toLocaleString();
-      els.productCount.textContent=Number(raw.productCount||state.rows.reduce((s,r)=>s+r.productCount,0)).toLocaleString();
-      els.loadedAt.textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-      status('Catalog loaded. Use filters or click column headers to sort.');applyFilters();
-    }
-    function applyFilters(){
-      const q=els.searchInput.value.trim().toLowerCase(),cat=els.categoryFilter.value,sub=els.subcategoryFilter.value,reg=els.regionFilter.value,on=els.onlineFilter.value,multi=els.multiFilter.value;
-      state.filtered=state.rows.filter(r=>!(q&&!r.searchBlob.includes(q))&&!(cat&&!r.categories.includes(cat))&&!(sub&&!r.subcategories.includes(sub))&&!(reg&&!r.regions.includes(reg))&&!(on==='yes'&&!r.onlineRedeem)&&!(on==='no'&&r.onlineRedeem)&&!(multi==='yes'&&!r.acceptsMultipleVouchers)&&!(multi==='no'&&r.acceptsMultipleVouchers));
-      sortRows();renderTable();
-    }
-    function cmp(a,b){const av=a[state.sortKey],bv=b[state.sortKey];if(typeof av==='number'||typeof bv==='number')return(Number(av)||0)-(Number(bv)||0);return String(av??'').localeCompare(String(bv??''),'he',{numeric:true})}
-    function sortRows(){state.filtered.sort((a,b)=>state.sortDir==='asc'?cmp(a,b):-cmp(a,b))}
-    function chips(items){return `<div class="chips">${items.slice(0,4).map(i=>`<span class="chip">${html(i)}</span>`).join('')}${items.length>4?`<span class="chip">+${items.length-4}</span>`:''}</div>`}
-    function link(label,url){return url?`<a href="${html(url)}" target="_blank" rel="noopener">${html(label)}</a>`:''}
-    function renderTable(){
-      els.visibleCount.textContent=state.filtered.length.toLocaleString();
-      if(!state.filtered.length){els.tableBody.innerHTML='<tr><td colspan="11" class="empty">No matching businesses.</td></tr>';return}
-      els.tableBody.innerHTML=state.filtered.map(r=>`<tr><td class="name-cell" data-rtl="true">${html(r.name)}${r.slogan?`<span class="subtle">${html(r.slogan)}</span>`:''}</td><td data-rtl="true">${chips(r.categories)}${r.subcategories.length?`<span class="subtle">${html(r.subcategoriesText)}</span>`:''}</td><td data-rtl="true">${chips(r.regions)}</td><td>${yn(r.onlineRedeem)}</td><td>${money(r.voucherMin)}</td><td>${money(r.voucherMax)}</td><td>${yn(r.acceptsMultipleVouchers)}${r.paymentWay?`<span class="subtle">${html(r.paymentWay)}</span>`:''}</td><td>${r.productCount.toLocaleString()}</td><td>${html(r.phone)}${r.email?`<span class="subtle">${html(r.email)}</span>`:''}</td><td data-rtl="true">${html(r.address)}</td><td>${[link('BuyMe',r.url),link('Website',r.website),link('Stores',r.storeLocatorUrl),link('Reserve',r.reservationUrl)].filter(Boolean).join('<br>')}</td></tr>`).join('');
-    }
-    function exportRows(){return state.filtered.map(r=>({name:r.name,slogan:r.slogan,categories:r.categoriesText,subcategories:r.subcategoriesText,regions:r.regionsText,onlineRedeem:yn(r.onlineRedeem),voucherMin:r.voucherMin,voucherMax:r.voucherMax,acceptsMultipleVouchers:yn(r.acceptsMultipleVouchers),paymentWay:r.paymentWay,productCount:r.productCount,phone:r.phone,email:r.email,address:r.address,buymeUrl:r.url,website:r.website,storeLocatorUrl:r.storeLocatorUrl,reservationUrl:r.reservationUrl,instagram:r.instagram,facebook:r.facebook,terms:r.terms,about:r.about}))}
-    function download(name,text,type){const blob=new Blob([text],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();URL.revokeObjectURL(url)}
-    function exportCsv(){const rows=exportRows();if(!rows.length)return;const heads=Object.keys(rows[0]);download('buyme-catalog-filtered.csv',[heads.join(','),...rows.map(r=>heads.map(h=>`"${String(r[h]??'').replaceAll('"','""')}"`).join(','))].join('\n'),'text/csv;charset=utf-8')}
-    function exportExcel(){if(!window.XLSX){status('Excel export library is not loaded. Check your internet connection or export CSV instead.','error');return}const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(exportRows()),'Businesses');const products=state.rows.flatMap(r=>r.products.map(p=>({business:r.name,businessId:r.id,name:p.name||'',price:p.price??'',priceBeforeDiscount:p.priceBeforeDiscount??'',onlineRedeem:yn(p.onlineRedeem),description:p.description||''})));XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(products),'Products');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(state.raw.categories||[]),'Categories');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(state.raw.regions||[]),'Regions');XLSX.writeFile(wb,'buyme-catalog.xlsx')}
-    document.querySelectorAll('th[data-sort]').forEach(th=>th.addEventListener('click',()=>{const key=th.dataset.sort;if(state.sortKey===key)state.sortDir=state.sortDir==='asc'?'desc':'asc';else{state.sortKey=key;state.sortDir='asc'}applyFilters()}));
-    [els.searchInput,els.categoryFilter,els.subcategoryFilter,els.regionFilter,els.onlineFilter,els.multiFilter].forEach(el=>{el.addEventListener('input',applyFilters);el.addEventListener('change',applyFilters)});
-    els.refreshButton.addEventListener('click',()=>loadCatalog().catch(e=>status(e.message,'error')));els.csvButton.addEventListener('click',exportCsv);els.excelButton.addEventListener('click',exportExcel);
-    loadCatalog().catch(e=>{console.error(e);status('Could not load the BuyMe catalog. Check internet access and whether GitHub Raw is reachable.','error');els.tableBody.innerHTML='<tr><td colspan="11" class="empty">Catalog failed to load.</td></tr>'});
-  </script>
+  const columns = [
+    {key:'details', label:'Details'},
+    {key:'name', label:'Name'}, {key:'slogan', label:'Description'},
+    {key:'categoriesText', label:'Categories'}, {key:'subcategoriesText', label:'Subcategories'},
+    {key:'regionsText', label:'Regions'}, {key:'onlineRedeem', label:'Online'},
+    {key:'voucherMin', label:'Voucher min'}, {key:'voucherMax', label:'Voucher max'},
+    {key:'paymentWay', label:'Payment'}, {key:'acceptsMultipleVouchers', label:'Multiple vouchers'},
+    {key:'productCount', label:'Products'}, {key:'address', label:'Address'},
+    {key:'phone', label:'Phone'}, {key:'website', label:'Website'}, {key:'url', label:'BuyMe'}
+  ];
+
+  function boolText(v){ return v === true ? 'Yes' : v === false ? 'No' : 'Unknown'; }
+  function text(v){ return v == null ? '' : String(v); }
+  function htmlEscape(v){ return text(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function safeUrl(v){ try { const u=new URL(v); return /^https?:$/.test(u.protocol) ? u.href : ''; } catch { return ''; } }
+  function money(v){ return v == null || v === '' ? '' : `₪${Number(v).toLocaleString('en-US')}`; }
+  function join(a){ return Array.isArray(a) ? a.join(' | ') : ''; }
+
+  function flatten(b){
+    const products = Array.isArray(b.products) ? b.products : [];
+    return {
+      ...b,
+      categoriesText: join(b.categories), subcategoriesText: join(b.subcategories), regionsText: join(b.regions),
+      voucherMin: b.voucher?.min ?? '', voucherMax: b.voucher?.max ?? '',
+      productCount: b.productCount ?? products.length,
+      productsText: products.map(p => `${p.name || ''}${p.price != null ? ` (${money(p.price)})` : ''}`).join(' | '),
+      searchBlob: [b.name,b.slogan,b.about,b.terms,b.address,b.phone,b.email,join(b.categories),join(b.subcategories),join(b.regions),products.map(p=>`${p.name||''} ${p.description||''}`).join(' ')].filter(Boolean).join(' ').toLocaleLowerCase('he')
+    };
+  }
+
+  async function load(){
+    $('status').textContent='Downloading catalog…'; $('refresh').disabled=true;
+    try {
+      const res=await fetch(`${DATA_URL}?t=${Date.now()}`, {cache:'no-store'});
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data=await res.json();
+      if(!Array.isArray(data.businesses)) throw new Error('Unexpected catalog format');
+      state.data=data; state.businesses=data.businesses.map(flatten); state.page=1;
+      populateFilters(); applyFilters();
+      $('csv').disabled=false; $('xlsx').disabled=typeof XLSX==='undefined';
+      $('status').textContent=`Loaded ${state.businesses.length.toLocaleString()} businesses`;
+    } catch(err){
+      $('status').innerHTML=`<span class="error">Could not load: ${htmlEscape(err.message)}. Check internet access and reopen the file.</span>`;
+    } finally { $('refresh').disabled=false; }
+  }
+
+  function unique(field){ return [...new Set(state.businesses.flatMap(b => Array.isArray(b[field]) ? b[field] : []).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'he')); }
+  function fillSelect(id, values, label){
+    const current=$(id).value; $(id).innerHTML=`<option value="">${label}</option>`+values.map(v=>`<option>${htmlEscape(v)}</option>`).join('');
+    if(values.includes(current)) $(id).value=current;
+  }
+  function populateFilters(){ fillSelect('category',unique('categories'),'All categories'); fillSelect('subcategory',unique('subcategories'),'All subcategories'); fillSelect('region',unique('regions'),'All regions'); }
+
+  function applyFilters(){
+    const q=$('search').value.trim().toLocaleLowerCase('he'), cat=$('category').value, sub=$('subcategory').value, reg=$('region').value, online=$('online').value, multi=$('multi').value;
+    state.filtered=state.businesses.filter(b =>
+      (!q || b.searchBlob.includes(q)) && (!cat || b.categories?.includes(cat)) && (!sub || b.subcategories?.includes(sub)) && (!reg || b.regions?.includes(reg)) &&
+      (!online || String(Boolean(b.onlineRedeem))===online) && (!multi || (multi==='unknown' ? b.acceptsMultipleVouchers==null : String(b.acceptsMultipleVouchers)===multi))
+    );
+    sortFiltered(); state.page=1; render();
+  }
+  function compare(a,b,key){
+    let av=a[key], bv=b[key];
+    if(typeof av==='boolean' || typeof bv==='boolean'){ av=av===true?1:av===false?0:-1; bv=bv===true?1:bv===false?0:-1; }
+    if(av==null) av=''; if(bv==null) bv='';
+    if(typeof av==='number' && typeof bv==='number') return av-bv;
+    return String(av).localeCompare(String(bv),'he',{numeric:true,sensitivity:'base'});
+  }
+  function sortFiltered(){ state.filtered.sort((a,b)=>state.sortDir*compare(a,b,state.sortKey)); }
+
+  function renderHead(){
+    $('table').tHead.innerHTML='<tr>'+columns.map(c=>`<th data-key="${c.key}">${htmlEscape(c.label)}${state.sortKey===c.key?(state.sortDir===1?' ▲':' ▼'):''}</th>`).join('')+'</tr>';
+    [...$('table').tHead.querySelectorAll('th')].forEach(th=>th.onclick=()=>{ const k=th.dataset.key; if(k==='details') return; state.sortDir=state.sortKey===k?-state.sortDir:1; state.sortKey=k; sortFiltered(); render(); });
+  }
+  function link(url,label){ const u=safeUrl(url); return u?`<a href="${htmlEscape(u)}" target="_blank" rel="noopener">${htmlEscape(label)}</a>`:''; }
+  function rowHtml(b){
+    return `<tr>
+      <td><button class="detail-btn" data-id="${b.id}">View</button></td>
+      <td class="rtl"><b>${htmlEscape(b.name)}</b></td><td class="rtl">${htmlEscape(b.slogan||'')}</td>
+      <td class="rtl">${htmlEscape(b.categoriesText)}</td><td class="rtl">${htmlEscape(b.subcategoriesText)}</td><td class="rtl">${htmlEscape(b.regionsText)}</td>
+      <td class="${b.onlineRedeem?'yes':''}">${boolText(Boolean(b.onlineRedeem))}</td><td>${money(b.voucherMin)}</td><td>${money(b.voucherMax)}</td>
+      <td>${htmlEscape(b.paymentWay||'')}</td><td class="${b.acceptsMultipleVouchers==null?'unknown':b.acceptsMultipleVouchers?'yes':''}">${boolText(b.acceptsMultipleVouchers)}</td>
+      <td>${Number(b.productCount||0).toLocaleString()}</td><td class="rtl">${htmlEscape(b.address||'')}</td><td>${htmlEscape(b.phone||'')}</td>
+      <td>${link(b.website,'Website')}</td><td>${link(b.url,'BuyMe')}</td>
+    </tr>`;
+  }
+  function render(){
+    renderHead(); state.pageSize=Number($('pageSize').value); const pages=Math.max(1,Math.ceil(state.filtered.length/state.pageSize)); state.page=Math.min(state.page,pages);
+    const start=(state.page-1)*state.pageSize, rows=state.filtered.slice(start,start+state.pageSize);
+    $('table').tBodies[0].innerHTML=rows.map(rowHtml).join('') || '<tr><td colspan="16">No matching businesses.</td></tr>';
+    [...document.querySelectorAll('.detail-btn')].forEach(btn=>btn.onclick=()=>showDetails(Number(btn.dataset.id)));
+    $('shownCount').textContent=state.filtered.length.toLocaleString(); $('allCount').textContent=state.businesses.length.toLocaleString();
+    $('onlineCount').textContent=state.businesses.filter(b=>b.onlineRedeem).length.toLocaleString();
+    $('productCount').textContent=state.businesses.reduce((n,b)=>n+(Number(b.productCount)||0),0).toLocaleString();
+    $('pageInfo').textContent=`Page ${state.page} of ${pages} · rows ${state.filtered.length?start+1:0}–${Math.min(start+state.pageSize,state.filtered.length)} of ${state.filtered.length.toLocaleString()}`;
+    $('prev').disabled=state.page<=1; $('next').disabled=state.page>=pages;
+  }
+
+  function detailLink(label,value){ const u=safeUrl(value); return u?`<a href="${htmlEscape(u)}" target="_blank" rel="noopener">${htmlEscape(label)}</a>`:htmlEscape(value||''); }
+  function showDetails(id){
+    const b=state.businesses.find(x=>Number(x.id)===id); if(!b) return;
+    $('detailTitle').textContent=b.name;
+    const products=(b.products||[]).map(p=>`<li><b>${htmlEscape(p.name||'')}</b>${p.price!=null?` — ${money(p.price)}`:''}${p.description?`<div class="long">${htmlEscape(p.description)}</div>`:''}</li>`).join('') || '<li>None listed</li>';
+    const fields=[
+      ['Description',b.slogan],['Categories',b.categoriesText],['Subcategories',b.subcategoriesText],['Regions',b.regionsText],['Address',b.address],['Phone',b.phone],['Email',b.email],
+      ['Online redemption',boolText(Boolean(b.onlineRedeem))],['Online money voucher',boolText(Boolean(b.onlineRedeemMoney))],['Voucher range',b.voucher?`${money(b.voucher.min)} – ${money(b.voucher.max)}`:''],
+      ['Payment way',b.paymentWay],['Multiple vouchers',boolText(b.acceptsMultipleVouchers)],['Website',detailLink('Open website',b.website)],['Store locator',detailLink('Open store locator',b.storeLocatorUrl)],
+      ['Reservation',detailLink('Open reservation',b.reservationUrl)],['Instagram',detailLink('Open Instagram',b.instagram)],['Facebook',detailLink('Open Facebook',b.facebook)],['BuyMe',detailLink('Open BuyMe listing',b.url)]
+    ];
+    $('detailBody').innerHTML=`<dl class="detail-grid">${fields.map(([k,v])=>`<dt>${htmlEscape(k)}</dt><dd>${v||''}</dd>`).join('')}</dl>
+      <h3>Products</h3><ul>${products}</ul><h3>Redemption terms</h3><div class="long">${htmlEscape(b.terms||'')}</div><h3>About</h3><div class="long">${htmlEscape(b.about||'')}</div>`;
+    $('details').showModal();
+  }
+
+  const exportColumns = [
+    ['id','ID'],['brandId','Brand ID'],['name','Name'],['slogan','Description'],['categoriesText','Categories'],['subcategoriesText','Subcategories'],['regionsText','Regions'],
+    ['onlineRedeem','Online redemption'],['onlineRedeemMoney','Online money voucher'],['voucherMin','Voucher min'],['voucherMax','Voucher max'],['paymentWay','Payment way'],
+    ['acceptsMultipleVouchers','Accepts multiple vouchers'],['productCount','Product count'],['productsText','Products summary'],['phone','Phone'],['email','Email'],['address','Address'],
+    ['website','Website'],['storeLocatorUrl','Store locator'],['reservationUrl','Reservation'],['instagram','Instagram'],['facebook','Facebook'],['url','BuyMe URL'],['logo','Logo URL'],['terms','Redemption terms'],['about','About']
+  ];
+  function exportRows(list){ return list.map(b=>Object.fromEntries(exportColumns.map(([k,h])=>[h, typeof b[k]==='boolean'?boolText(b[k]):b[k]??'']))); }
+  function csvEscape(v){ const s=text(v).replace(/\r?\n/g,' '); return /[",\n]/.test(s)?`"${s.replace(/"/g,'""')}"`:s; }
+  function downloadBlob(blob,name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); }
+  function exportCSV(){
+    const rows=exportRows(state.filtered), headers=exportColumns.map(x=>x[1]); const csv='\uFEFF'+headers.map(csvEscape).join(',')+'\n'+rows.map(r=>headers.map(h=>csvEscape(r[h])).join(',')).join('\n');
+    downloadBlob(new Blob([csv],{type:'text/csv;charset=utf-8'}),'buyme_businesses_filtered.csv');
+  }
+  function setWidths(ws, rows){ const keys=Object.keys(rows[0]||{}); ws['!cols']=keys.map(k=>({wch:Math.min(55,Math.max(10,k.length+2,...rows.slice(0,300).map(r=>Math.min(55,text(r[k]).length+2))))})); ws['!autofilter']={ref:ws['!ref']}; }
+  function exportXLSX(){
+    if(typeof XLSX==='undefined') return alert('Excel export library did not load. CSV export still works.');
+    const wb=XLSX.utils.book_new();
+    const businessRows=exportRows(state.businesses); const ws=XLSX.utils.json_to_sheet(businessRows); setWidths(ws,businessRows); XLSX.utils.book_append_sheet(wb,ws,'Businesses');
+    const products=[]; state.businesses.forEach(b=>(b.products||[]).forEach(p=>products.push({'Business ID':b.id,'Business name':b.name,'Product ID':p.id,'Product name':p.name,'Price':p.price??'','Price before discount':p.priceBeforeDiscount??'','Online redemption':boolText(Boolean(p.onlineRedeem)),'Description':p.description??'','BuyMe URL':b.url})));
+    const pws=XLSX.utils.json_to_sheet(products); setWidths(pws,products); XLSX.utils.book_append_sheet(wb,pws,'Products');
+    const categoryRows=(state.data.categories||[]).map(c=>({ID:c.id,Category:c.name,Position:c.pos??'',Subcategories:(c.subCategories||[]).map(s=>s.name).join(' | '),Businesses:state.businesses.filter(b=>b.categoryIds?.includes(c.id)).length}));
+    const cws=XLSX.utils.json_to_sheet(categoryRows); setWidths(cws,categoryRows); XLSX.utils.book_append_sheet(wb,cws,'Categories');
+    const regionRows=(state.data.regions||[]).map(r=>({ID:r.id,Region:r.name,Businesses:state.businesses.filter(b=>b.regionIds?.includes(r.id)).length}));
+    const rws=XLSX.utils.json_to_sheet(regionRows); setWidths(rws,regionRows); XLSX.utils.book_append_sheet(wb,rws,'Regions');
+    const meta=[{Field:'Catalog source',Value:state.data.source||'buyme.co.il'},{Field:'Master voucher ID',Value:state.data.masterVoucherId||13438757},{Field:'Business count',Value:state.businesses.length},{Field:'Product count',Value:state.data.productCount||products.length},{Field:'Fetched by this file',Value:new Date().toISOString()},{Field:'Catalog mirror',Value:DATA_URL},{Field:'Official listing',Value:BUYME_PAGE}];
+    const mws=XLSX.utils.json_to_sheet(meta); setWidths(mws,meta); XLSX.utils.book_append_sheet(wb,mws,'Metadata');
+    XLSX.writeFile(wb,'buyme_catalog_full.xlsx');
+  }
+
+  ['search','category','subcategory','region','online','multi'].forEach(id=>$(id).addEventListener(id==='search'?'input':'change',applyFilters));
+  $('pageSize').onchange=()=>{state.page=1;render();}; $('prev').onclick=()=>{state.page--;render();}; $('next').onclick=()=>{state.page++;render();};
+  $('refresh').onclick=load; $('csv').onclick=exportCSV; $('xlsx').onclick=exportXLSX; $('close').onclick=()=>$('details').close();
+  load();
+})();
+</script>
 </body>
 </html>

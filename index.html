@@ -6,91 +6,417 @@
   <title>BUYME Catalog Sorter</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
-    :root { color-scheme: light dark; --bg:#f5f7fb; --panel:#fff; --text:#172033; --muted:#67738a; --line:#dce2ec; --accent:#7a3cff; --accent2:#efe9ff; --danger:#b42318; }
-    @media (prefers-color-scheme: dark) { :root { --bg:#11141b; --panel:#191e28; --text:#eef2fa; --muted:#aab4c7; --line:#303847; --accent:#ad8cff; --accent2:#2c2440; --danger:#ff9b91; } }
+    :root {
+      color-scheme: light dark;
+      --bg: #f4f6fb;
+      --panel: #ffffff;
+      --panel-soft: #f8f9fc;
+      --text: #172033;
+      --muted: #667085;
+      --line: #dfe3eb;
+      --accent: #6d36e8;
+      --accent-hover: #5d2bc9;
+      --accent-soft: #f0eaff;
+      --success: #157347;
+      --success-soft: #e9f7ef;
+      --danger: #b42318;
+      --shadow: 0 10px 30px rgba(31, 38, 60, 0.08);
+      --radius: 14px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #10131a;
+        --panel: #191e28;
+        --panel-soft: #141923;
+        --text: #eef2fa;
+        --muted: #aab4c7;
+        --line: #303847;
+        --accent: #a889ff;
+        --accent-hover: #baa2ff;
+        --accent-soft: #2c2440;
+        --success: #74d6a0;
+        --success-soft: #173526;
+        --danger: #ff9b91;
+        --shadow: none;
+      }
+    }
+
     * { box-sizing: border-box; }
-    body { margin:0; font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif; background:var(--bg); color:var(--text); }
-    header { padding:22px 24px 16px; background:var(--panel); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; }
-    h1 { margin:0 0 5px; font-size:23px; }
-    .sub { color:var(--muted); }
-    main { padding:18px 24px 30px; }
-    .toolbar { display:grid; grid-template-columns:minmax(230px,2fr) repeat(5,minmax(135px,1fr)); gap:10px; margin-bottom:10px; }
-    input, select, button { font:inherit; border:1px solid var(--line); border-radius:9px; padding:9px 10px; background:var(--panel); color:var(--text); }
-    button { cursor:pointer; font-weight:650; }
-    button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
-    button:disabled { opacity:.5; cursor:not-allowed; }
-    .actions { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:10px 0; }
-    .status { margin-left:auto; color:var(--muted); }
-    .cards { display:grid; grid-template-columns:repeat(4,minmax(130px,1fr)); gap:10px; margin:12px 0; }
-    .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
-    .card b { font-size:20px; display:block; }
-    .card span { color:var(--muted); }
-    .table-wrap { overflow:auto; border:1px solid var(--line); border-radius:12px; background:var(--panel); max-height:68vh; }
-    table { border-collapse:separate; border-spacing:0; width:max-content; min-width:100%; }
-    th, td { padding:9px 10px; border-bottom:1px solid var(--line); border-right:1px solid var(--line); vertical-align:top; max-width:310px; }
-    th { position:sticky; top:0; z-index:2; background:var(--panel); text-align:left; white-space:nowrap; cursor:pointer; user-select:none; }
-    th:last-child, td:last-child { border-right:0; }
-    tr:last-child td { border-bottom:0; }
-    tbody tr:hover { background:var(--accent2); }
-    td.rtl { direction:rtl; text-align:right; }
-    .pill { display:inline-block; padding:2px 7px; border-radius:999px; background:var(--accent2); margin:1px 2px; white-space:nowrap; }
-    .yes { font-weight:700; }
-    .unknown { color:var(--muted); }
-    a { color:var(--accent); }
-    .pager { display:flex; align-items:center; gap:8px; margin-top:10px; }
-    .pager .page-info { color:var(--muted); }
-    dialog { width:min(900px,94vw); max-height:88vh; border:1px solid var(--line); border-radius:14px; background:var(--panel); color:var(--text); padding:0; }
-    dialog::backdrop { background:rgba(0,0,0,.55); }
-    .modal-head { position:sticky; top:0; background:var(--panel); padding:15px 18px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:10px; }
-    .modal-head h2 { margin:0; flex:1; }
-    .modal-body { padding:17px 18px; }
-    .detail-grid { display:grid; grid-template-columns:160px 1fr; gap:8px 12px; }
-    .detail-grid dt { color:var(--muted); font-weight:650; }
-    .detail-grid dd { margin:0; overflow-wrap:anywhere; }
-    .long { white-space:pre-wrap; direction:rtl; text-align:right; }
-    .error { color:var(--danger); font-weight:650; }
-    .source-note { color:var(--muted); font-size:12px; margin-top:8px; }
-    @media(max-width:1050px){ .toolbar{grid-template-columns:repeat(2,minmax(0,1fr));}.cards{grid-template-columns:repeat(2,1fr)} }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    button, input, select { font: inherit; }
+    button, input, select { outline-offset: 2px; }
+    button:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--accent) 35%, transparent);
+    }
+
+    .app-header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+    }
+    .header-inner, main {
+      width: min(1800px, 100%);
+      margin: 0 auto;
+      padding-left: clamp(14px, 2.4vw, 30px);
+      padding-right: clamp(14px, 2.4vw, 30px);
+    }
+    .header-inner { padding-top: 22px; padding-bottom: 18px; }
+    .eyebrow {
+      margin-bottom: 5px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 750;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    h1 { margin: 0; font-size: clamp(24px, 3vw, 32px); line-height: 1.15; letter-spacing: -.02em; }
+    .sub { margin-top: 7px; max-width: 760px; color: var(--muted); }
+    main { padding-top: 18px; padding-bottom: 34px; }
+
+    .workspace {
+      position: sticky;
+      top: 0;
+      z-index: 8;
+      margin: 0 0 14px;
+      padding: 14px;
+      background: color-mix(in srgb, var(--panel) 96%, transparent);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(260px, 2fr) repeat(5, minmax(145px, 1fr));
+      gap: 9px;
+    }
+    .field { min-width: 0; }
+    .field label {
+      display: block;
+      margin: 0 0 5px 2px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+    }
+    input, select, button {
+      min-height: 39px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel);
+      color: var(--text);
+    }
+    input, select { width: 100%; padding: 8px 10px; }
+    input::placeholder { color: var(--muted); }
+    button {
+      padding: 8px 12px;
+      cursor: pointer;
+      font-weight: 680;
+      transition: background .15s ease, border-color .15s ease, transform .05s ease;
+    }
+    button:hover:not(:disabled) { border-color: color-mix(in srgb, var(--accent) 50%, var(--line)); }
+    button:active:not(:disabled) { transform: translateY(1px); }
+    button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    button.primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
+    button.ghost { background: transparent; }
+    button.small { min-height: 32px; padding: 5px 9px; font-size: 13px; }
+    button:disabled { opacity: .48; cursor: not-allowed; }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-top: 11px;
+    }
+    .actions .row-control {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 39px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel);
+      color: var(--muted);
+    }
+    .actions .row-control select { width: auto; min-height: 30px; padding: 3px 5px; border: 0; }
+    .status { margin-left: auto; color: var(--muted); font-size: 13px; }
+    .error { color: var(--danger); font-weight: 650; }
+
+    .column-panel {
+      margin-top: 10px;
+      border-top: 1px solid var(--line);
+      padding-top: 10px;
+    }
+    .column-panel-title {
+      width: fit-content;
+      color: var(--text);
+      font-weight: 700;
+      user-select: none;
+    }
+    .column-panel-body { padding-top: 10px; }
+    .column-panel-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 9px; }
+    .column-options { display: flex; flex-wrap: wrap; gap: 7px; }
+    .column-option {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 34px;
+      padding: 6px 9px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--panel-soft);
+      cursor: pointer;
+      user-select: none;
+    }
+    .column-option:hover { border-color: color-mix(in srgb, var(--accent) 50%, var(--line)); }
+    .column-option input { width: 16px; min-height: 16px; margin: 0; accent-color: var(--accent); }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(150px, 1fr));
+      gap: 10px;
+      margin: 0 0 12px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+    .card b { display: block; font-size: 21px; line-height: 1.2; }
+    .card span { color: var(--muted); }
+
+    .table-shell {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .table-meta {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 13px;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .table-wrap { overflow: auto; max-height: 67vh; }
+    table {
+      border-collapse: separate;
+      border-spacing: 0;
+      table-layout: auto;
+      width: max-content;
+      min-width: 100%;
+    }
+    th, td {
+      padding: 9px 11px;
+      border-bottom: 1px solid var(--line);
+      border-right: 1px solid var(--line);
+      vertical-align: top;
+      width: 1%;
+      white-space: nowrap;
+    }
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: var(--panel);
+      text-align: left;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 760;
+      letter-spacing: .015em;
+      cursor: pointer;
+      user-select: none;
+    }
+    th[aria-sort="ascending"], th[aria-sort="descending"] { color: var(--text); }
+    th:last-child, td:last-child { border-right: 0; }
+    tr:last-child td { border-bottom: 0; }
+    tbody tr:hover { background: var(--accent-soft); }
+    td.rtl { direction: rtl; text-align: right; }
+    td.wrap {
+      width: auto;
+      min-width: 200px;
+      max-width: min(380px, 40vw);
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+    td.name-cell { min-width: 135px; }
+    .sort-icon { margin-left: 4px; color: var(--accent); }
+    .yes-badge, .no-badge, .unknown-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .yes-badge { color: var(--success); background: var(--success-soft); }
+    .no-badge { color: var(--muted); background: var(--panel-soft); }
+    .unknown-badge { color: var(--muted); border: 1px solid var(--line); }
+    a { color: var(--accent); text-underline-offset: 2px; }
+    .empty-state { padding: 34px 20px; color: var(--muted); text-align: center; }
+
+    .pager {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 11px 13px;
+      border-top: 1px solid var(--line);
+    }
+    .pager-buttons { display: flex; gap: 8px; }
+    .page-info { color: var(--muted); font-size: 13px; }
+    .source-note { color: var(--muted); font-size: 12px; margin-top: 9px; }
+
+    dialog {
+      width: min(900px, 94vw);
+      max-height: 88vh;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--panel);
+      color: var(--text);
+      padding: 0;
+      box-shadow: 0 24px 80px rgba(0,0,0,.32);
+    }
+    dialog::backdrop { background: rgba(0,0,0,.58); }
+    .modal-head {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 15px 18px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel);
+    }
+    .modal-head h2 { margin: 0; flex: 1; font-size: 20px; }
+    .modal-body { padding: 17px 18px 22px; }
+    .detail-grid { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 8px 12px; }
+    .detail-grid dt { color: var(--muted); font-weight: 650; }
+    .detail-grid dd { margin: 0; overflow-wrap: anywhere; }
+    .long { white-space: pre-wrap; direction: rtl; text-align: right; }
+
+    @media (max-width: 1200px) {
+      .toolbar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .field.search-field { grid-column: span 3; }
+      .workspace { position: static; }
+    }
+    @media (max-width: 760px) {
+      .toolbar { grid-template-columns: 1fr 1fr; }
+      .field.search-field { grid-column: span 2; }
+      .cards { grid-template-columns: repeat(2, 1fr); }
+      .status { width: 100%; margin-left: 0; }
+      .detail-grid { grid-template-columns: 1fr; }
+      .detail-grid dt { margin-top: 8px; }
+      .pager { align-items: flex-start; flex-direction: column; }
+    }
+    @media (max-width: 460px) {
+      .toolbar { grid-template-columns: 1fr; }
+      .field.search-field { grid-column: auto; }
+      .cards { grid-template-columns: 1fr 1fr; }
+      .actions > button { flex: 1 1 45%; }
+    }
   </style>
 </head>
 <body>
-<header>
-  <h1>BUYME Catalog Sorter</h1>
-  <div class="sub">Search, filter, sort, inspect and export the full BUYME ALL business catalog.</div>
+<header class="app-header">
+  <div class="header-inner">
+    <div class="eyebrow">BuyMe All catalog</div>
+    <h1>Catalog Sorter</h1>
+    <div class="sub">Find businesses quickly, choose the information you need, sort any visible column and export the results.</div>
+  </div>
 </header>
+
 <main>
-  <div class="toolbar">
-    <input id="search" type="search" placeholder="Search name, description, address, category…" />
-    <select id="category"><option value="">All categories</option></select>
-    <select id="subcategory"><option value="">All subcategories</option></select>
-    <select id="region"><option value="">All regions</option></select>
-    <select id="online"><option value="">Online: all</option><option value="true">Online redemption</option><option value="false">In-store only</option></select>
-    <select id="multi"><option value="">Multiple vouchers: all</option><option value="true">Accepted</option><option value="false">Not accepted</option><option value="unknown">Unknown</option></select>
-  </div>
+  <section class="workspace" aria-label="Catalog controls">
+    <div class="toolbar">
+      <div class="field search-field">
+        <label for="search">Search</label>
+        <input id="search" type="search" autocomplete="off" placeholder="Name, description, address, category…" />
+      </div>
+      <div class="field">
+        <label for="category">Category</label>
+        <select id="category"><option value="">All categories</option></select>
+      </div>
+      <div class="field">
+        <label for="subcategory">Subcategory</label>
+        <select id="subcategory"><option value="">All subcategories</option></select>
+      </div>
+      <div class="field">
+        <label for="region">Region</label>
+        <select id="region"><option value="">All regions</option></select>
+      </div>
+      <div class="field">
+        <label for="online">Redemption</label>
+        <select id="online"><option value="">Online and in-store</option><option value="true">Online redemption</option><option value="false">In-store only</option></select>
+      </div>
+      <div class="field">
+        <label for="multi">Multiple vouchers</label>
+        <select id="multi"><option value="">Any policy</option><option value="true">Accepted</option><option value="false">Not accepted</option><option value="unknown">Unknown</option></select>
+      </div>
+    </div>
 
-  <div class="actions">
-    <button class="primary" id="refresh">Refresh catalog</button>
-    <button id="csv" disabled>Export filtered CSV</button>
-    <button id="xlsx" disabled>Export full Excel</button>
-    <label>Rows: <select id="pageSize"><option>50</option><option selected>100</option><option>250</option><option value="999999">All</option></select></label>
-    <span class="status" id="status">Loading…</span>
-  </div>
+    <div class="actions">
+      <button class="primary" id="refresh">Refresh catalog</button>
+      <button class="ghost" id="clearFilters">Clear filters</button>
+      <button id="csv" disabled>Export filtered CSV</button>
+      <button id="xlsx" disabled>Export full Excel</button>
+      <label class="row-control" for="pageSize">Rows
+        <select id="pageSize"><option>50</option><option selected>100</option><option>250</option><option value="999999">All</option></select>
+      </label>
+      <span class="status" id="status" role="status" aria-live="polite">Loading…</span>
+    </div>
 
-  <div class="cards">
+    <div class="column-panel" id="columnPanel">
+      <div class="column-panel-title"><span id="visibleColumnCount">—</span> visible columns · choose what to show</div>
+      <div class="column-panel-body">
+        <div class="column-panel-actions">
+          <button class="small" id="essentialColumns">Essential</button>
+          <button class="small" id="allColumns">Show all</button>
+          <button class="small ghost" id="resetColumns">Reset</button>
+        </div>
+        <div class="column-options" id="columnOptions" aria-label="Visible table columns"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cards" aria-label="Catalog summary">
     <div class="card"><b id="shownCount">—</b><span>matching businesses</span></div>
     <div class="card"><b id="allCount">—</b><span>total businesses</span></div>
     <div class="card"><b id="onlineCount">—</b><span>online redemption</span></div>
     <div class="card"><b id="productCount">—</b><span>fixed-price products</span></div>
-  </div>
+  </section>
 
-  <div class="table-wrap">
-    <table id="table">
-      <thead></thead><tbody></tbody>
-    </table>
-  </div>
-  <div class="pager">
-    <button id="prev">Previous</button><button id="next">Next</button><span class="page-info" id="pageInfo"></span>
-  </div>
+  <section class="table-shell" aria-label="Businesses table">
+    <div class="table-meta">
+      <span>Click a column title to sort.</span>
+      <span id="activeFilters">No filters applied</span>
+    </div>
+    <div class="table-wrap" tabindex="0">
+      <table id="table">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="pager">
+      <span class="page-info" id="pageInfo"></span>
+      <div class="pager-buttons"><button id="prev">Previous</button><button id="next">Next</button></div>
+    </div>
+  </section>
+
   <div class="source-note">Data source: public BuyMe catalog mirror refreshed weekly from BuyMe's public endpoints. Always verify current redemption terms on the official BuyMe page.</div>
 </main>
 
@@ -102,157 +428,339 @@
 <script>
 (() => {
   'use strict';
+
   const DATA_URL = 'https://raw.githubusercontent.com/eladkishon/buyme-mcp/refs/heads/main/data/buyme.json';
   const BUYME_PAGE = 'https://buyme.co.il/brands/13438757';
+  const STORAGE_KEY = 'buyme-visible-columns-v2';
   const $ = id => document.getElementById(id);
-  const state = { data:null, businesses:[], filtered:[], sortKey:'name', sortDir:1, page:1, pageSize:100 };
 
   const columns = [
-    {key:'details', label:'Details'},
-    {key:'name', label:'Name'}, {key:'slogan', label:'Description'},
-    {key:'categoriesText', label:'Categories'}, {key:'subcategoriesText', label:'Subcategories'},
-    {key:'regionsText', label:'Regions'}, {key:'onlineRedeem', label:'Online'},
-    {key:'voucherMin', label:'Voucher min'}, {key:'voucherMax', label:'Voucher max'},
-    {key:'paymentWay', label:'Payment'}, {key:'acceptsMultipleVouchers', label:'Multiple vouchers'},
-    {key:'productCount', label:'Products'}, {key:'address', label:'Address'},
-    {key:'phone', label:'Phone'}, {key:'website', label:'Website'}, {key:'url', label:'BuyMe'}
+    { key: 'details', label: 'Details', default: true, essential: true, sortable: false, cell: b => `<button class="detail-btn small" data-id="${b.id}">View</button>` },
+    { key: 'name', label: 'Name', default: true, essential: true, className: 'rtl name-cell', cell: b => `<b>${htmlEscape(b.name)}</b>` },
+    { key: 'slogan', label: 'Description', default: false, className: 'rtl wrap', cell: b => htmlEscape(b.slogan || '') },
+    { key: 'categoriesText', label: 'Categories', default: true, essential: true, className: 'rtl', cell: b => htmlEscape(b.categoriesText) },
+    { key: 'subcategoriesText', label: 'Subcategories', default: false, className: 'rtl', cell: b => htmlEscape(b.subcategoriesText) },
+    { key: 'regionsText', label: 'Regions', default: true, essential: true, className: 'rtl', cell: b => htmlEscape(b.regionsText) },
+    { key: 'onlineRedeem', label: 'Online', default: true, essential: true, cell: b => boolBadge(Boolean(b.onlineRedeem)) },
+    { key: 'voucherMin', label: 'Voucher min', default: true, cell: b => money(b.voucherMin) },
+    { key: 'voucherMax', label: 'Voucher max', default: true, cell: b => money(b.voucherMax) },
+    { key: 'paymentWay', label: 'Payment', default: false, cell: b => htmlEscape(b.paymentWay || '') },
+    { key: 'acceptsMultipleVouchers', label: 'Multiple vouchers', default: false, cell: b => boolBadge(b.acceptsMultipleVouchers) },
+    { key: 'productCount', label: 'Products', default: true, cell: b => Number(b.productCount || 0).toLocaleString() },
+    { key: 'address', label: 'Address', default: false, className: 'rtl wrap', cell: b => htmlEscape(b.address || '') },
+    { key: 'phone', label: 'Phone', default: false, cell: b => htmlEscape(b.phone || '') },
+    { key: 'website', label: 'Website', default: false, cell: b => link(b.website, 'Website') },
+    { key: 'url', label: 'BuyMe', default: true, essential: true, cell: b => link(b.url, 'Open') }
   ];
 
-  function boolText(v){ return v === true ? 'Yes' : v === false ? 'No' : 'Unknown'; }
-  function text(v){ return v == null ? '' : String(v); }
-  function htmlEscape(v){ return text(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-  function safeUrl(v){ try { const u=new URL(v); return /^https?:$/.test(u.protocol) ? u.href : ''; } catch { return ''; } }
-  function money(v){ return v == null || v === '' ? '' : `₪${Number(v).toLocaleString('en-US')}`; }
-  function join(a){ return Array.isArray(a) ? a.join(' | ') : ''; }
+  const state = {
+    data: null,
+    businesses: [],
+    filtered: [],
+    sortKey: 'name',
+    sortDir: 1,
+    page: 1,
+    pageSize: 100,
+    visibleColumns: new Set(loadVisibleColumns())
+  };
 
-  function flatten(b){
+  function text(v) { return v == null ? '' : String(v); }
+  function htmlEscape(v) { return text(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+  function safeUrl(v) { try { const u = new URL(v); return /^https?:$/.test(u.protocol) ? u.href : ''; } catch { return ''; } }
+  function money(v) { return v == null || v === '' ? '' : `₪${Number(v).toLocaleString('en-US')}`; }
+  function join(a) { return Array.isArray(a) ? a.join(' | ') : ''; }
+  function boolText(v) { return v === true ? 'Yes' : v === false ? 'No' : 'Unknown'; }
+  function boolBadge(v) {
+    const cls = v === true ? 'yes-badge' : v === false ? 'no-badge' : 'unknown-badge';
+    return `<span class="${cls}">${boolText(v)}</span>`;
+  }
+  function link(url, label) {
+    const u = safeUrl(url);
+    return u ? `<a href="${htmlEscape(u)}" target="_blank" rel="noopener">${htmlEscape(label)}</a>` : '';
+  }
+
+  function defaultColumnKeys() { return columns.filter(c => c.default).map(c => c.key); }
+  function essentialColumnKeys() { return columns.filter(c => c.essential).map(c => c.key); }
+  function loadVisibleColumns() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      const validKeys = new Set(columns.map(c => c.key));
+      if (Array.isArray(saved)) {
+        const clean = saved.filter(k => validKeys.has(k));
+        if (clean.length) return clean;
+      }
+    } catch {}
+    return defaultColumnKeys();
+  }
+  function saveVisibleColumns() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([...state.visibleColumns]));
+  }
+  function visibleColumns() { return columns.filter(c => state.visibleColumns.has(c.key)); }
+
+  function flatten(b) {
     const products = Array.isArray(b.products) ? b.products : [];
     return {
       ...b,
-      categoriesText: join(b.categories), subcategoriesText: join(b.subcategories), regionsText: join(b.regions),
-      voucherMin: b.voucher?.min ?? '', voucherMax: b.voucher?.max ?? '',
+      categoriesText: join(b.categories),
+      subcategoriesText: join(b.subcategories),
+      regionsText: join(b.regions),
+      voucherMin: b.voucher?.min ?? '',
+      voucherMax: b.voucher?.max ?? '',
       productCount: b.productCount ?? products.length,
       productsText: products.map(p => `${p.name || ''}${p.price != null ? ` (${money(p.price)})` : ''}`).join(' | '),
-      searchBlob: [b.name,b.slogan,b.about,b.terms,b.address,b.phone,b.email,join(b.categories),join(b.subcategories),join(b.regions),products.map(p=>`${p.name||''} ${p.description||''}`).join(' ')].filter(Boolean).join(' ').toLocaleLowerCase('he')
+      searchBlob: [b.name, b.slogan, b.about, b.terms, b.address, b.phone, b.email, join(b.categories), join(b.subcategories), join(b.regions), products.map(p => `${p.name || ''} ${p.description || ''}`).join(' ')].filter(Boolean).join(' ').toLocaleLowerCase('he')
     };
   }
 
-  async function load(){
-    $('status').textContent='Downloading catalog…'; $('refresh').disabled=true;
+  async function load() {
+    $('status').textContent = 'Downloading catalog…';
+    $('refresh').disabled = true;
     try {
-      const res=await fetch(`${DATA_URL}?t=${Date.now()}`, {cache:'no-store'});
-      if(!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data=await res.json();
-      if(!Array.isArray(data.businesses)) throw new Error('Unexpected catalog format');
-      state.data=data; state.businesses=data.businesses.map(flatten); state.page=1;
-      populateFilters(); applyFilters();
-      $('csv').disabled=false; $('xlsx').disabled=typeof XLSX==='undefined';
-      $('status').textContent=`Loaded ${state.businesses.length.toLocaleString()} businesses`;
-    } catch(err){
-      $('status').innerHTML=`<span class="error">Could not load: ${htmlEscape(err.message)}. Check internet access and reopen the file.</span>`;
-    } finally { $('refresh').disabled=false; }
+      const res = await fetch(`${DATA_URL}?t=${Date.now()}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (!Array.isArray(data.businesses)) throw new Error('Unexpected catalog format');
+      state.data = data;
+      state.businesses = data.businesses.map(flatten);
+      state.page = 1;
+      populateFilters();
+      applyFilters();
+      $('csv').disabled = false;
+      $('xlsx').disabled = typeof XLSX === 'undefined';
+      $('status').textContent = `Updated ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    } catch (err) {
+      $('status').innerHTML = `<span class="error">Could not load: ${htmlEscape(err.message)}. Check internet access and reopen the file.</span>`;
+    } finally {
+      $('refresh').disabled = false;
+    }
   }
 
-  function unique(field){ return [...new Set(state.businesses.flatMap(b => Array.isArray(b[field]) ? b[field] : []).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'he')); }
-  function fillSelect(id, values, label){
-    const current=$(id).value; $(id).innerHTML=`<option value="">${label}</option>`+values.map(v=>`<option>${htmlEscape(v)}</option>`).join('');
-    if(values.includes(current)) $(id).value=current;
+  function unique(field) {
+    return [...new Set(state.businesses.flatMap(b => Array.isArray(b[field]) ? b[field] : []).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'he'));
   }
-  function populateFilters(){ fillSelect('category',unique('categories'),'All categories'); fillSelect('subcategory',unique('subcategories'),'All subcategories'); fillSelect('region',unique('regions'),'All regions'); }
+  function fillSelect(id, values, label) {
+    const current = $(id).value;
+    $(id).innerHTML = `<option value="">${label}</option>` + values.map(v => `<option>${htmlEscape(v)}</option>`).join('');
+    if (values.includes(current)) $(id).value = current;
+  }
+  function populateFilters() {
+    fillSelect('category', unique('categories'), 'All categories');
+    fillSelect('subcategory', unique('subcategories'), 'All subcategories');
+    fillSelect('region', unique('regions'), 'All regions');
+  }
 
-  function applyFilters(){
-    const q=$('search').value.trim().toLocaleLowerCase('he'), cat=$('category').value, sub=$('subcategory').value, reg=$('region').value, online=$('online').value, multi=$('multi').value;
-    state.filtered=state.businesses.filter(b =>
-      (!q || b.searchBlob.includes(q)) && (!cat || b.categories?.includes(cat)) && (!sub || b.subcategories?.includes(sub)) && (!reg || b.regions?.includes(reg)) &&
-      (!online || String(Boolean(b.onlineRedeem))===online) && (!multi || (multi==='unknown' ? b.acceptsMultipleVouchers==null : String(b.acceptsMultipleVouchers)===multi))
+  function activeFilterCount() {
+    return ['search', 'category', 'subcategory', 'region', 'online', 'multi'].filter(id => $(id).value).length;
+  }
+  function updateFilterStatus() {
+    const count = activeFilterCount();
+    $('activeFilters').textContent = count ? `${count} active filter${count === 1 ? '' : 's'}` : 'No filters applied';
+    $('clearFilters').disabled = count === 0;
+  }
+  function applyFilters() {
+    const q = $('search').value.trim().toLocaleLowerCase('he');
+    const cat = $('category').value;
+    const sub = $('subcategory').value;
+    const reg = $('region').value;
+    const online = $('online').value;
+    const multi = $('multi').value;
+
+    state.filtered = state.businesses.filter(b =>
+      (!q || b.searchBlob.includes(q)) &&
+      (!cat || b.categories?.includes(cat)) &&
+      (!sub || b.subcategories?.includes(sub)) &&
+      (!reg || b.regions?.includes(reg)) &&
+      (!online || String(Boolean(b.onlineRedeem)) === online) &&
+      (!multi || (multi === 'unknown' ? b.acceptsMultipleVouchers == null : String(b.acceptsMultipleVouchers) === multi))
     );
-    sortFiltered(); state.page=1; render();
+    sortFiltered();
+    state.page = 1;
+    updateFilterStatus();
+    render();
   }
-  function compare(a,b,key){
-    let av=a[key], bv=b[key];
-    if(typeof av==='boolean' || typeof bv==='boolean'){ av=av===true?1:av===false?0:-1; bv=bv===true?1:bv===false?0:-1; }
-    if(av==null) av=''; if(bv==null) bv='';
-    if(typeof av==='number' && typeof bv==='number') return av-bv;
-    return String(av).localeCompare(String(bv),'he',{numeric:true,sensitivity:'base'});
-  }
-  function sortFiltered(){ state.filtered.sort((a,b)=>state.sortDir*compare(a,b,state.sortKey)); }
-
-  function renderHead(){
-    $('table').tHead.innerHTML='<tr>'+columns.map(c=>`<th data-key="${c.key}">${htmlEscape(c.label)}${state.sortKey===c.key?(state.sortDir===1?' ▲':' ▼'):''}</th>`).join('')+'</tr>';
-    [...$('table').tHead.querySelectorAll('th')].forEach(th=>th.onclick=()=>{ const k=th.dataset.key; if(k==='details') return; state.sortDir=state.sortKey===k?-state.sortDir:1; state.sortKey=k; sortFiltered(); render(); });
-  }
-  function link(url,label){ const u=safeUrl(url); return u?`<a href="${htmlEscape(u)}" target="_blank" rel="noopener">${htmlEscape(label)}</a>`:''; }
-  function rowHtml(b){
-    return `<tr>
-      <td><button class="detail-btn" data-id="${b.id}">View</button></td>
-      <td class="rtl"><b>${htmlEscape(b.name)}</b></td><td class="rtl">${htmlEscape(b.slogan||'')}</td>
-      <td class="rtl">${htmlEscape(b.categoriesText)}</td><td class="rtl">${htmlEscape(b.subcategoriesText)}</td><td class="rtl">${htmlEscape(b.regionsText)}</td>
-      <td class="${b.onlineRedeem?'yes':''}">${boolText(Boolean(b.onlineRedeem))}</td><td>${money(b.voucherMin)}</td><td>${money(b.voucherMax)}</td>
-      <td>${htmlEscape(b.paymentWay||'')}</td><td class="${b.acceptsMultipleVouchers==null?'unknown':b.acceptsMultipleVouchers?'yes':''}">${boolText(b.acceptsMultipleVouchers)}</td>
-      <td>${Number(b.productCount||0).toLocaleString()}</td><td class="rtl">${htmlEscape(b.address||'')}</td><td>${htmlEscape(b.phone||'')}</td>
-      <td>${link(b.website,'Website')}</td><td>${link(b.url,'BuyMe')}</td>
-    </tr>`;
-  }
-  function render(){
-    renderHead(); state.pageSize=Number($('pageSize').value); const pages=Math.max(1,Math.ceil(state.filtered.length/state.pageSize)); state.page=Math.min(state.page,pages);
-    const start=(state.page-1)*state.pageSize, rows=state.filtered.slice(start,start+state.pageSize);
-    $('table').tBodies[0].innerHTML=rows.map(rowHtml).join('') || '<tr><td colspan="16">No matching businesses.</td></tr>';
-    [...document.querySelectorAll('.detail-btn')].forEach(btn=>btn.onclick=()=>showDetails(Number(btn.dataset.id)));
-    $('shownCount').textContent=state.filtered.length.toLocaleString(); $('allCount').textContent=state.businesses.length.toLocaleString();
-    $('onlineCount').textContent=state.businesses.filter(b=>b.onlineRedeem).length.toLocaleString();
-    $('productCount').textContent=state.businesses.reduce((n,b)=>n+(Number(b.productCount)||0),0).toLocaleString();
-    $('pageInfo').textContent=`Page ${state.page} of ${pages} · rows ${state.filtered.length?start+1:0}–${Math.min(start+state.pageSize,state.filtered.length)} of ${state.filtered.length.toLocaleString()}`;
-    $('prev').disabled=state.page<=1; $('next').disabled=state.page>=pages;
+  function clearFilters() {
+    ['search', 'category', 'subcategory', 'region', 'online', 'multi'].forEach(id => { $(id).value = ''; });
+    applyFilters();
   }
 
-  function detailLink(label,value){ const u=safeUrl(value); return u?`<a href="${htmlEscape(u)}" target="_blank" rel="noopener">${htmlEscape(label)}</a>`:htmlEscape(value||''); }
-  function showDetails(id){
-    const b=state.businesses.find(x=>Number(x.id)===id); if(!b) return;
-    $('detailTitle').textContent=b.name;
-    const products=(b.products||[]).map(p=>`<li><b>${htmlEscape(p.name||'')}</b>${p.price!=null?` — ${money(p.price)}`:''}${p.description?`<div class="long">${htmlEscape(p.description)}</div>`:''}</li>`).join('') || '<li>None listed</li>';
-    const fields=[
-      ['Description',b.slogan],['Categories',b.categoriesText],['Subcategories',b.subcategoriesText],['Regions',b.regionsText],['Address',b.address],['Phone',b.phone],['Email',b.email],
-      ['Online redemption',boolText(Boolean(b.onlineRedeem))],['Online money voucher',boolText(Boolean(b.onlineRedeemMoney))],['Voucher range',b.voucher?`${money(b.voucher.min)} – ${money(b.voucher.max)}`:''],
-      ['Payment way',b.paymentWay],['Multiple vouchers',boolText(b.acceptsMultipleVouchers)],['Website',detailLink('Open website',b.website)],['Store locator',detailLink('Open store locator',b.storeLocatorUrl)],
-      ['Reservation',detailLink('Open reservation',b.reservationUrl)],['Instagram',detailLink('Open Instagram',b.instagram)],['Facebook',detailLink('Open Facebook',b.facebook)],['BuyMe',detailLink('Open BuyMe listing',b.url)]
+  function compare(a, b, key) {
+    let av = a[key], bv = b[key];
+    if (typeof av === 'boolean' || typeof bv === 'boolean') {
+      av = av === true ? 1 : av === false ? 0 : -1;
+      bv = bv === true ? 1 : bv === false ? 0 : -1;
+    }
+    if (av == null) av = '';
+    if (bv == null) bv = '';
+    if (typeof av === 'number' && typeof bv === 'number') return av - bv;
+    return String(av).localeCompare(String(bv), 'he', { numeric: true, sensitivity: 'base' });
+  }
+  function sortFiltered() { state.filtered.sort((a, b) => state.sortDir * compare(a, b, state.sortKey)); }
+
+  function renderColumnOptions() {
+    $('columnOptions').innerHTML = columns.map(c => `
+      <label class="column-option">
+        <input type="checkbox" value="${c.key}" ${state.visibleColumns.has(c.key) ? 'checked' : ''}>
+        <span>${htmlEscape(c.label)}</span>
+      </label>`).join('');
+
+    $('columnOptions').querySelectorAll('input').forEach(input => {
+      input.addEventListener('change', () => {
+        if (input.checked) state.visibleColumns.add(input.value);
+        else state.visibleColumns.delete(input.value);
+        if (state.visibleColumns.size === 0) {
+          state.visibleColumns.add('name');
+          input.checked = input.value === 'name';
+          renderColumnOptions();
+        }
+        if (!state.visibleColumns.has(state.sortKey)) {
+          state.sortKey = 'name';
+          state.sortDir = 1;
+          sortFiltered();
+        }
+        saveVisibleColumns();
+        render();
+      });
+    });
+    updateVisibleColumnCount();
+  }
+  function setVisibleColumns(keys) {
+    state.visibleColumns = new Set(keys);
+    saveVisibleColumns();
+    renderColumnOptions();
+    if (!state.visibleColumns.has(state.sortKey)) {
+      state.sortKey = 'name';
+      state.sortDir = 1;
+      sortFiltered();
+    }
+    render();
+  }
+  function updateVisibleColumnCount() {
+    $('visibleColumnCount').textContent = state.visibleColumns.size;
+  }
+
+  function renderHead() {
+    const activeColumns = visibleColumns();
+    $('table').tHead.innerHTML = '<tr>' + activeColumns.map(c => {
+      const isSorted = state.sortKey === c.key;
+      const ariaSort = isSorted ? (state.sortDir === 1 ? 'ascending' : 'descending') : 'none';
+      const icon = isSorted ? `<span class="sort-icon" aria-hidden="true">${state.sortDir === 1 ? '▲' : '▼'}</span>` : '';
+      return `<th data-key="${c.key}" aria-sort="${ariaSort}" ${c.sortable === false ? 'data-static="true"' : ''}>${htmlEscape(c.label)}${icon}</th>`;
+    }).join('') + '</tr>';
+
+    [...$('table').tHead.querySelectorAll('th:not([data-static="true"])')].forEach(th => {
+      th.onclick = () => {
+        const k = th.dataset.key;
+        state.sortDir = state.sortKey === k ? -state.sortDir : 1;
+        state.sortKey = k;
+        sortFiltered();
+        render();
+      };
+    });
+  }
+
+  function rowHtml(b) {
+    return '<tr>' + visibleColumns().map(c => `<td class="${c.className || ''}">${c.cell(b)}</td>`).join('') + '</tr>';
+  }
+  function render() {
+    renderHead();
+    updateVisibleColumnCount();
+    state.pageSize = Number($('pageSize').value);
+    const pages = Math.max(1, Math.ceil(state.filtered.length / state.pageSize));
+    state.page = Math.min(state.page, pages);
+    const start = (state.page - 1) * state.pageSize;
+    const rows = state.filtered.slice(start, start + state.pageSize);
+    const colspan = Math.max(1, visibleColumns().length);
+
+    $('table').tBodies[0].innerHTML = rows.map(rowHtml).join('') || `<tr><td class="empty-state" colspan="${colspan}">No businesses match these filters.</td></tr>`;
+    [...document.querySelectorAll('.detail-btn')].forEach(btn => btn.onclick = () => showDetails(Number(btn.dataset.id)));
+
+    $('shownCount').textContent = state.filtered.length.toLocaleString();
+    $('allCount').textContent = state.businesses.length.toLocaleString();
+    $('onlineCount').textContent = state.businesses.filter(b => b.onlineRedeem).length.toLocaleString();
+    $('productCount').textContent = state.businesses.reduce((n, b) => n + (Number(b.productCount) || 0), 0).toLocaleString();
+    $('pageInfo').textContent = `Page ${state.page} of ${pages} · rows ${state.filtered.length ? start + 1 : 0}–${Math.min(start + state.pageSize, state.filtered.length)} of ${state.filtered.length.toLocaleString()}`;
+    $('prev').disabled = state.page <= 1;
+    $('next').disabled = state.page >= pages;
+  }
+
+  function detailLink(label, value) {
+    const u = safeUrl(value);
+    return u ? `<a href="${htmlEscape(u)}" target="_blank" rel="noopener">${htmlEscape(label)}</a>` : htmlEscape(value || '');
+  }
+  function showDetails(id) {
+    const b = state.businesses.find(x => Number(x.id) === id);
+    if (!b) return;
+    $('detailTitle').textContent = b.name;
+    const products = (b.products || []).map(p => `<li><b>${htmlEscape(p.name || '')}</b>${p.price != null ? ` — ${money(p.price)}` : ''}${p.description ? `<div class="long">${htmlEscape(p.description)}</div>` : ''}</li>`).join('') || '<li>None listed</li>';
+    const fields = [
+      ['Description', b.slogan], ['Categories', b.categoriesText], ['Subcategories', b.subcategoriesText], ['Regions', b.regionsText], ['Address', b.address], ['Phone', b.phone], ['Email', b.email],
+      ['Online redemption', boolText(Boolean(b.onlineRedeem))], ['Online money voucher', boolText(Boolean(b.onlineRedeemMoney))], ['Voucher range', b.voucher ? `${money(b.voucher.min)} – ${money(b.voucher.max)}` : ''],
+      ['Payment way', b.paymentWay], ['Multiple vouchers', boolText(b.acceptsMultipleVouchers)], ['Website', detailLink('Open website', b.website)], ['Store locator', detailLink('Open store locator', b.storeLocatorUrl)],
+      ['Reservation', detailLink('Open reservation', b.reservationUrl)], ['Instagram', detailLink('Open Instagram', b.instagram)], ['Facebook', detailLink('Open Facebook', b.facebook)], ['BuyMe', detailLink('Open BuyMe listing', b.url)]
     ];
-    $('detailBody').innerHTML=`<dl class="detail-grid">${fields.map(([k,v])=>`<dt>${htmlEscape(k)}</dt><dd>${v||''}</dd>`).join('')}</dl>
-      <h3>Products</h3><ul>${products}</ul><h3>Redemption terms</h3><div class="long">${htmlEscape(b.terms||'')}</div><h3>About</h3><div class="long">${htmlEscape(b.about||'')}</div>`;
+    $('detailBody').innerHTML = `<dl class="detail-grid">${fields.map(([k, v]) => `<dt>${htmlEscape(k)}</dt><dd>${v || ''}</dd>`).join('')}</dl>
+      <h3>Products</h3><ul>${products}</ul><h3>Redemption terms</h3><div class="long">${htmlEscape(b.terms || '')}</div><h3>About</h3><div class="long">${htmlEscape(b.about || '')}</div>`;
     $('details').showModal();
   }
 
   const exportColumns = [
-    ['id','ID'],['brandId','Brand ID'],['name','Name'],['slogan','Description'],['categoriesText','Categories'],['subcategoriesText','Subcategories'],['regionsText','Regions'],
-    ['onlineRedeem','Online redemption'],['onlineRedeemMoney','Online money voucher'],['voucherMin','Voucher min'],['voucherMax','Voucher max'],['paymentWay','Payment way'],
-    ['acceptsMultipleVouchers','Accepts multiple vouchers'],['productCount','Product count'],['productsText','Products summary'],['phone','Phone'],['email','Email'],['address','Address'],
-    ['website','Website'],['storeLocatorUrl','Store locator'],['reservationUrl','Reservation'],['instagram','Instagram'],['facebook','Facebook'],['url','BuyMe URL'],['logo','Logo URL'],['terms','Redemption terms'],['about','About']
+    ['id', 'ID'], ['brandId', 'Brand ID'], ['name', 'Name'], ['slogan', 'Description'], ['categoriesText', 'Categories'], ['subcategoriesText', 'Subcategories'], ['regionsText', 'Regions'],
+    ['onlineRedeem', 'Online redemption'], ['onlineRedeemMoney', 'Online money voucher'], ['voucherMin', 'Voucher min'], ['voucherMax', 'Voucher max'], ['paymentWay', 'Payment way'],
+    ['acceptsMultipleVouchers', 'Accepts multiple vouchers'], ['productCount', 'Product count'], ['productsText', 'Products summary'], ['phone', 'Phone'], ['email', 'Email'], ['address', 'Address'],
+    ['website', 'Website'], ['storeLocatorUrl', 'Store locator'], ['reservationUrl', 'Reservation'], ['instagram', 'Instagram'], ['facebook', 'Facebook'], ['url', 'BuyMe URL'], ['logo', 'Logo URL'], ['terms', 'Redemption terms'], ['about', 'About']
   ];
-  function exportRows(list){ return list.map(b=>Object.fromEntries(exportColumns.map(([k,h])=>[h, typeof b[k]==='boolean'?boolText(b[k]):b[k]??'']))); }
-  function csvEscape(v){ const s=text(v).replace(/\r?\n/g,' '); return /[",\n]/.test(s)?`"${s.replace(/"/g,'""')}"`:s; }
-  function downloadBlob(blob,name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); }
-  function exportCSV(){
-    const rows=exportRows(state.filtered), headers=exportColumns.map(x=>x[1]); const csv='\uFEFF'+headers.map(csvEscape).join(',')+'\n'+rows.map(r=>headers.map(h=>csvEscape(r[h])).join(',')).join('\n');
-    downloadBlob(new Blob([csv],{type:'text/csv;charset=utf-8'}),'buyme_businesses_filtered.csv');
+  function exportRows(list) { return list.map(b => Object.fromEntries(exportColumns.map(([k, h]) => [h, typeof b[k] === 'boolean' ? boolText(b[k]) : b[k] ?? '']))); }
+  function csvEscape(v) { const s = text(v).replace(/\r?\n/g, ' '); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; }
+  function downloadBlob(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); }
+  function exportCSV() {
+    const rows = exportRows(state.filtered), headers = exportColumns.map(x => x[1]);
+    const csv = '\uFEFF' + headers.map(csvEscape).join(',') + '\n' + rows.map(r => headers.map(h => csvEscape(r[h])).join(',')).join('\n');
+    downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), 'buyme_businesses_filtered.csv');
   }
-  function setWidths(ws, rows){ const keys=Object.keys(rows[0]||{}); ws['!cols']=keys.map(k=>({wch:Math.min(55,Math.max(10,k.length+2,...rows.slice(0,300).map(r=>Math.min(55,text(r[k]).length+2))))})); ws['!autofilter']={ref:ws['!ref']}; }
-  function exportXLSX(){
-    if(typeof XLSX==='undefined') return alert('Excel export library did not load. CSV export still works.');
-    const wb=XLSX.utils.book_new();
-    const businessRows=exportRows(state.businesses); const ws=XLSX.utils.json_to_sheet(businessRows); setWidths(ws,businessRows); XLSX.utils.book_append_sheet(wb,ws,'Businesses');
-    const products=[]; state.businesses.forEach(b=>(b.products||[]).forEach(p=>products.push({'Business ID':b.id,'Business name':b.name,'Product ID':p.id,'Product name':p.name,'Price':p.price??'','Price before discount':p.priceBeforeDiscount??'','Online redemption':boolText(Boolean(p.onlineRedeem)),'Description':p.description??'','BuyMe URL':b.url})));
-    const pws=XLSX.utils.json_to_sheet(products); setWidths(pws,products); XLSX.utils.book_append_sheet(wb,pws,'Products');
-    const categoryRows=(state.data.categories||[]).map(c=>({ID:c.id,Category:c.name,Position:c.pos??'',Subcategories:(c.subCategories||[]).map(s=>s.name).join(' | '),Businesses:state.businesses.filter(b=>b.categoryIds?.includes(c.id)).length}));
-    const cws=XLSX.utils.json_to_sheet(categoryRows); setWidths(cws,categoryRows); XLSX.utils.book_append_sheet(wb,cws,'Categories');
-    const regionRows=(state.data.regions||[]).map(r=>({ID:r.id,Region:r.name,Businesses:state.businesses.filter(b=>b.regionIds?.includes(r.id)).length}));
-    const rws=XLSX.utils.json_to_sheet(regionRows); setWidths(rws,regionRows); XLSX.utils.book_append_sheet(wb,rws,'Regions');
-    const meta=[{Field:'Catalog source',Value:state.data.source||'buyme.co.il'},{Field:'Master voucher ID',Value:state.data.masterVoucherId||13438757},{Field:'Business count',Value:state.businesses.length},{Field:'Product count',Value:state.data.productCount||products.length},{Field:'Fetched by this file',Value:new Date().toISOString()},{Field:'Catalog mirror',Value:DATA_URL},{Field:'Official listing',Value:BUYME_PAGE}];
-    const mws=XLSX.utils.json_to_sheet(meta); setWidths(mws,meta); XLSX.utils.book_append_sheet(wb,mws,'Metadata');
-    XLSX.writeFile(wb,'buyme_catalog_full.xlsx');
+  function setWidths(ws, rows) {
+    const keys = Object.keys(rows[0] || {});
+    ws['!cols'] = keys.map(k => ({ wch: Math.min(55, Math.max(10, k.length + 2, ...rows.slice(0, 300).map(r => Math.min(55, text(r[k]).length + 2)))) }));
+    ws['!autofilter'] = { ref: ws['!ref'] };
+  }
+  function exportXLSX() {
+    if (typeof XLSX === 'undefined') return alert('Excel export library did not load. CSV export still works.');
+    const wb = XLSX.utils.book_new();
+    const businessRows = exportRows(state.businesses);
+    const ws = XLSX.utils.json_to_sheet(businessRows);
+    setWidths(ws, businessRows);
+    XLSX.utils.book_append_sheet(wb, ws, 'Businesses');
+
+    const products = [];
+    state.businesses.forEach(b => (b.products || []).forEach(p => products.push({ 'Business ID': b.id, 'Business name': b.name, 'Product ID': p.id, 'Product name': p.name, 'Price': p.price ?? '', 'Price before discount': p.priceBeforeDiscount ?? '', 'Online redemption': boolText(Boolean(p.onlineRedeem)), 'Description': p.description ?? '', 'BuyMe URL': b.url })));
+    const pws = XLSX.utils.json_to_sheet(products); setWidths(pws, products); XLSX.utils.book_append_sheet(wb, pws, 'Products');
+
+    const categoryRows = (state.data.categories || []).map(c => ({ ID: c.id, Category: c.name, Position: c.pos ?? '', Subcategories: (c.subCategories || []).map(s => s.name).join(' | '), Businesses: state.businesses.filter(b => b.categoryIds?.includes(c.id)).length }));
+    const cws = XLSX.utils.json_to_sheet(categoryRows); setWidths(cws, categoryRows); XLSX.utils.book_append_sheet(wb, cws, 'Categories');
+
+    const regionRows = (state.data.regions || []).map(r => ({ ID: r.id, Region: r.name, Businesses: state.businesses.filter(b => b.regionIds?.includes(r.id)).length }));
+    const rws = XLSX.utils.json_to_sheet(regionRows); setWidths(rws, regionRows); XLSX.utils.book_append_sheet(wb, rws, 'Regions');
+
+    const meta = [{ Field: 'Catalog source', Value: state.data.source || 'buyme.co.il' }, { Field: 'Master voucher ID', Value: state.data.masterVoucherId || 13438757 }, { Field: 'Business count', Value: state.businesses.length }, { Field: 'Product count', Value: state.data.productCount || products.length }, { Field: 'Fetched by this file', Value: new Date().toISOString() }, { Field: 'Catalog mirror', Value: DATA_URL }, { Field: 'Official listing', Value: BUYME_PAGE }];
+    const mws = XLSX.utils.json_to_sheet(meta); setWidths(mws, meta); XLSX.utils.book_append_sheet(wb, mws, 'Metadata');
+    XLSX.writeFile(wb, 'buyme_catalog_full.xlsx');
   }
 
-  ['search','category','subcategory','region','online','multi'].forEach(id=>$(id).addEventListener(id==='search'?'input':'change',applyFilters));
-  $('pageSize').onchange=()=>{state.page=1;render();}; $('prev').onclick=()=>{state.page--;render();}; $('next').onclick=()=>{state.page++;render();};
-  $('refresh').onclick=load; $('csv').onclick=exportCSV; $('xlsx').onclick=exportXLSX; $('close').onclick=()=>$('details').close();
+  ['search', 'category', 'subcategory', 'region', 'online', 'multi'].forEach(id => $(id).addEventListener(id === 'search' ? 'input' : 'change', applyFilters));
+  $('pageSize').onchange = () => { state.page = 1; render(); };
+  $('prev').onclick = () => { state.page--; render(); };
+  $('next').onclick = () => { state.page++; render(); };
+  $('refresh').onclick = load;
+  $('clearFilters').onclick = clearFilters;
+  $('csv').onclick = exportCSV;
+  $('xlsx').onclick = exportXLSX;
+  $('close').onclick = () => $('details').close();
+  $('essentialColumns').onclick = () => setVisibleColumns(essentialColumnKeys());
+  $('allColumns').onclick = () => setVisibleColumns(columns.map(c => c.key));
+  $('resetColumns').onclick = () => setVisibleColumns(defaultColumnKeys());
+  $('details').addEventListener('click', event => { if (event.target === $('details')) $('details').close(); });
+
+  renderColumnOptions();
+  updateFilterStatus();
   load();
 })();
 </script>

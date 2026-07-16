@@ -67,7 +67,7 @@
       padding-left: clamp(14px, 2.4vw, 30px);
       padding-right: clamp(14px, 2.4vw, 30px);
     }
-    .header-inner { padding-top: 58px; padding-bottom: 18px; }
+    .header-inner { padding-top: 58px; padding-bottom: 22px; text-align: center; }
     .language-toggle {
       position: absolute;
       top: 14px;
@@ -87,16 +87,13 @@
       font-size: 13px;
       white-space: nowrap;
     }
-    .eyebrow {
-      margin-bottom: 5px;
+    h1 {
+      margin: 0;
       color: var(--accent);
-      font-size: 12px;
-      font-weight: 750;
-      letter-spacing: .08em;
-      text-transform: uppercase;
+      font-size: clamp(30px, 4vw, 46px);
+      line-height: 1.1;
+      letter-spacing: 0;
     }
-    h1 { margin: 0; font-size: clamp(24px, 3vw, 32px); line-height: 1.15; letter-spacing: -.02em; }
-    .sub { margin-top: 7px; max-width: 760px; color: var(--muted); }
     main { padding-top: 18px; padding-bottom: 34px; }
 
     .workspace {
@@ -271,6 +268,18 @@
       white-space: normal;
       overflow-wrap: anywhere;
     }
+    td.three-line-cell {
+      min-width: 160px;
+      max-width: 230px;
+      white-space: normal;
+    }
+    .line-clamp-3 {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      overflow-wrap: anywhere;
+    }
     td.name-cell { min-width: 135px; }
     .sort-icon { margin-left: 4px; color: var(--accent); }
     .yes-badge, .no-badge, .unknown-badge {
@@ -363,9 +372,7 @@
 <header class="app-header">
   <button class="language-toggle" id="languageToggle" type="button" aria-label="Switch interface to Hebrew">🇮🇱 HE</button>
   <div class="header-inner">
-    <div class="eyebrow" id="eyebrow">BuyMe All catalog</div>
-    <h1 id="appTitle">Catalog Sorter</h1>
-    <div class="sub" id="appSubtitle">Find businesses quickly, choose the information you need, sort any visible column and export the results.</div>
+    <h1 id="appTitle">BuyMe All Catalog Sorter</h1>
   </div>
 </header>
 
@@ -460,15 +467,15 @@
 
   const DATA_URL = 'https://raw.githubusercontent.com/eladkishon/buyme-mcp/refs/heads/main/data/buyme.json';
   const BUYME_PAGE = 'https://buyme.co.il/brands/13438757';
-  const STORAGE_KEY = 'buyme-visible-columns-v2';
+  const STORAGE_KEY = 'buyme-visible-columns-v3';
   const LANG_STORAGE_KEY = 'buyme-interface-language';
   const $ = id => document.getElementById(id);
 
   const copy = {
     en: {
-      docTitle: 'BUYME Catalog Sorter',
+      docTitle: 'BuyMe All Catalog Sorter',
       eyebrow: 'BuyMe All catalog',
-      appTitle: 'Catalog Sorter',
+      appTitle: 'BuyMe All Catalog Sorter',
       appSubtitle: 'Find businesses quickly, choose the information you need, sort any visible column and export the results.',
       labelSearch: 'Search',
       searchPlaceholder: 'Name, description, address, category…',
@@ -566,9 +573,9 @@
       columnBuyMe: 'BuyMe'
     },
     he: {
-      docTitle: 'מיון קטלוג BUYME',
+      docTitle: 'BuyMe All Catalog Sorter',
       eyebrow: 'קטלוג BuyMe All',
-      appTitle: 'מיון קטלוג',
+      appTitle: 'BuyMe All Catalog Sorter',
       appSubtitle: 'מצאו עסקים במהירות, בחרו איזה מידע להציג, מיינו כל עמודה גלויה וייצאו את התוצאות.',
       labelSearch: 'חיפוש',
       searchPlaceholder: 'שם, תיאור, כתובת, קטגוריה…',
@@ -675,19 +682,19 @@
     { key: 'details', labelKey: 'columnDetails', default: true, essential: true, sortable: false, cell: b => `<button class="detail-btn small" data-id="${b.id}">${ui('view')}</button>` },
     { key: 'name', labelKey: 'columnName', default: true, essential: true, className: 'rtl name-cell', cell: b => `<b>${htmlEscape(b.name)}</b>` },
     { key: 'slogan', labelKey: 'columnDescription', default: false, className: 'rtl wrap', cell: b => htmlEscape(b.slogan || '') },
-    { key: 'categoriesText', labelKey: 'columnCategories', default: true, essential: true, className: 'rtl', cell: b => htmlEscape(b.categoriesText) },
+    { key: 'categoriesText', labelKey: 'columnCategories', default: false, className: 'rtl', cell: b => htmlEscape(b.categoriesText) },
     { key: 'subcategoriesText', labelKey: 'columnSubcategories', default: false, className: 'rtl', cell: b => htmlEscape(b.subcategoriesText) },
-    { key: 'regionsText', labelKey: 'columnRegions', default: true, essential: true, className: 'rtl', cell: b => htmlEscape(b.regionsText) },
-    { key: 'onlineRedeem', labelKey: 'columnOnline', default: true, essential: true, cell: b => boolBadge(Boolean(b.onlineRedeem)) },
-    { key: 'voucherMin', labelKey: 'columnVoucherMin', default: true, cell: b => money(b.voucherMin) },
-    { key: 'voucherMax', labelKey: 'columnVoucherMax', default: true, cell: b => money(b.voucherMax) },
+    { key: 'regionsText', labelKey: 'columnRegions', default: true, essential: true, className: 'rtl three-line-cell', cell: b => `<span class="line-clamp-3">${htmlEscape(b.regionsText)}</span>` },
+    { key: 'onlineRedeem', labelKey: 'columnOnline', default: false, cell: b => boolBadge(Boolean(b.onlineRedeem)) },
+    { key: 'voucherMin', labelKey: 'columnVoucherMin', default: false, cell: b => money(b.voucherMin) },
+    { key: 'voucherMax', labelKey: 'columnVoucherMax', default: false, cell: b => money(b.voucherMax) },
     { key: 'paymentWay', labelKey: 'columnPayment', default: false, cell: b => htmlEscape(b.paymentWay || '') },
     { key: 'acceptsMultipleVouchers', labelKey: 'columnMultipleVouchers', default: false, cell: b => boolBadge(b.acceptsMultipleVouchers) },
-    { key: 'productCount', labelKey: 'columnProducts', default: true, cell: b => Number(b.productCount || 0).toLocaleString() },
+    { key: 'productCount', labelKey: 'columnProducts', default: false, cell: b => Number(b.productCount || 0).toLocaleString() },
     { key: 'address', labelKey: 'columnAddress', default: false, className: 'rtl wrap', cell: b => htmlEscape(b.address || '') },
     { key: 'phone', labelKey: 'columnPhone', default: false, cell: b => htmlEscape(b.phone || '') },
-    { key: 'website', labelKey: 'columnWebsite', default: false, cell: b => link(b.website, ui('websiteLink')) },
-    { key: 'url', labelKey: 'columnBuyMe', default: true, essential: true, cell: b => link(b.url, ui('open')) }
+    { key: 'website', labelKey: 'columnWebsite', default: true, essential: true, cell: b => link(b.website, ui('websiteLink')) },
+    { key: 'url', labelKey: 'columnBuyMe', default: false, cell: b => link(b.url, ui('open')) }
   ];
 
   const state = {
@@ -1004,7 +1011,7 @@
     document.title = ui('docTitle');
 
     [
-      ['eyebrow', 'eyebrow'], ['appTitle', 'appTitle'], ['appSubtitle', 'appSubtitle'],
+      ['appTitle', 'appTitle'],
       ['labelSearch', 'labelSearch'], ['labelCategory', 'labelCategory'], ['labelSubcategory', 'labelSubcategory'],
       ['labelRegion', 'labelRegion'], ['labelOnline', 'labelOnline'], ['labelMulti', 'labelMulti'],
       ['refresh', 'refresh'], ['clearFilters', 'clearFilters'], ['csv', 'csv'], ['xlsx', 'xlsx'],

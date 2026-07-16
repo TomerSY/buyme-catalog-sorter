@@ -57,6 +57,7 @@
     }
 
     .app-header {
+      position: relative;
       background: var(--panel);
       border-bottom: 1px solid var(--line);
     }
@@ -66,7 +67,26 @@
       padding-left: clamp(14px, 2.4vw, 30px);
       padding-right: clamp(14px, 2.4vw, 30px);
     }
-    .header-inner { padding-top: 22px; padding-bottom: 18px; }
+    .header-inner { padding-top: 58px; padding-bottom: 18px; }
+    .language-toggle {
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      z-index: 3;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 98px;
+      min-height: 34px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      transform: translateX(-50%);
+      direction: ltr;
+      unicode-bidi: isolate;
+      font-size: 13px;
+      white-space: nowrap;
+    }
     .eyebrow {
       margin-bottom: 5px;
       color: var(--accent);
@@ -341,6 +361,7 @@
 </head>
 <body>
 <header class="app-header">
+  <button class="language-toggle" id="languageToggle" type="button" aria-label="Switch interface to Hebrew">🇮🇱 HE</button>
   <div class="header-inner">
     <div class="eyebrow" id="eyebrow">BuyMe All catalog</div>
     <h1 id="appTitle">Catalog Sorter</h1>
@@ -380,7 +401,6 @@
     <div class="actions">
       <button class="primary" id="refresh">Refresh catalog</button>
       <button class="ghost" id="clearFilters">Clear filters</button>
-      <button class="small" id="languageToggle" type="button" aria-label="Switch interface language">עברית</button>
       <button id="csv" disabled>Export filtered CSV</button>
       <button id="xlsx" disabled>Export full Excel</button>
       <label class="row-control" for="pageSize"><span id="rowsLabel">Rows</span>
@@ -996,7 +1016,7 @@
     ].forEach(([id, key]) => setText(id, key));
 
     $('search').placeholder = ui('searchPlaceholder');
-    $('languageToggle').textContent = uiLang === 'en' ? 'עברית' : 'EN';
+    $('languageToggle').textContent = uiLang === 'en' ? '🇮🇱 HE' : '🇺🇸 EN';
     $('languageToggle').setAttribute('aria-label', uiLang === 'en' ? 'Switch interface to Hebrew' : 'Switch interface to English');
     $('pageSize').querySelector('option[value="999999"]').textContent = ui('allRows');
     setSelectOptionLabels('online', { '': ui('onlineAll'), 'true': ui('onlineTrue'), 'false': ui('onlineFalse') });

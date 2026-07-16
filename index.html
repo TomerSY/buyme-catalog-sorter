@@ -279,6 +279,14 @@
     .pager-buttons { display: flex; gap: 8px; }
     .page-info { color: var(--muted); font-size: 13px; }
     .source-note { color: var(--muted); font-size: 12px; margin-top: 9px; }
+    body[data-ui-lang="he"] .app-header,
+    body[data-ui-lang="he"] .workspace,
+    body[data-ui-lang="he"] .table-meta,
+    body[data-ui-lang="he"] .pager,
+    body[data-ui-lang="he"] .source-note {
+      direction: rtl;
+    }
+    body[data-ui-lang="he"] th { text-align: right; }
 
     dialog {
       width: min(900px, 94vw);
@@ -334,9 +342,9 @@
 <body>
 <header class="app-header">
   <div class="header-inner">
-    <div class="eyebrow">BuyMe All catalog</div>
-    <h1>Catalog Sorter</h1>
-    <div class="sub">Find businesses quickly, choose the information you need, sort any visible column and export the results.</div>
+    <div class="eyebrow" id="eyebrow">BuyMe All catalog</div>
+    <h1 id="appTitle">Catalog Sorter</h1>
+    <div class="sub" id="appSubtitle">Find businesses quickly, choose the information you need, sort any visible column and export the results.</div>
   </div>
 </header>
 
@@ -344,27 +352,27 @@
   <section class="workspace" aria-label="Catalog controls">
     <div class="toolbar">
       <div class="field search-field">
-        <label for="search">Search</label>
+        <label for="search" id="labelSearch">Search</label>
         <input id="search" type="search" autocomplete="off" placeholder="Name, description, address, category…" />
       </div>
       <div class="field">
-        <label for="category">Category</label>
+        <label for="category" id="labelCategory">Category</label>
         <select id="category"><option value="">All categories</option></select>
       </div>
       <div class="field">
-        <label for="subcategory">Subcategory</label>
+        <label for="subcategory" id="labelSubcategory">Subcategory</label>
         <select id="subcategory"><option value="">All subcategories</option></select>
       </div>
       <div class="field">
-        <label for="region">Region</label>
+        <label for="region" id="labelRegion">Region</label>
         <select id="region"><option value="">All regions</option></select>
       </div>
       <div class="field">
-        <label for="online">Redemption</label>
+        <label for="online" id="labelOnline">Redemption</label>
         <select id="online"><option value="">Online and in-store</option><option value="true">Online redemption</option><option value="false">In-store only</option></select>
       </div>
       <div class="field">
-        <label for="multi">Multiple vouchers</label>
+        <label for="multi" id="labelMulti">Multiple vouchers</label>
         <select id="multi"><option value="">Any policy</option><option value="true">Accepted</option><option value="false">Not accepted</option><option value="unknown">Unknown</option></select>
       </div>
     </div>
@@ -372,16 +380,17 @@
     <div class="actions">
       <button class="primary" id="refresh">Refresh catalog</button>
       <button class="ghost" id="clearFilters">Clear filters</button>
+      <button class="small" id="languageToggle" type="button" aria-label="Switch interface language">עברית</button>
       <button id="csv" disabled>Export filtered CSV</button>
       <button id="xlsx" disabled>Export full Excel</button>
-      <label class="row-control" for="pageSize">Rows
+      <label class="row-control" for="pageSize"><span id="rowsLabel">Rows</span>
         <select id="pageSize"><option>50</option><option selected>100</option><option>250</option><option value="999999">All</option></select>
       </label>
       <span class="status" id="status" role="status" aria-live="polite">Loading…</span>
     </div>
 
     <div class="column-panel" id="columnPanel">
-      <div class="column-panel-title"><span id="visibleColumnCount">—</span> visible columns · choose what to show</div>
+      <div class="column-panel-title"><span id="visibleColumnCount">—</span> <span id="visibleColumnsText">visible columns · choose what to show</span></div>
       <div class="column-panel-body">
         <div class="column-panel-actions">
           <button class="small" id="essentialColumns">Essential</button>
@@ -394,15 +403,15 @@
   </section>
 
   <section class="cards" aria-label="Catalog summary">
-    <div class="card"><b id="shownCount">—</b><span>matching businesses</span></div>
-    <div class="card"><b id="allCount">—</b><span>total businesses</span></div>
-    <div class="card"><b id="onlineCount">—</b><span>online redemption</span></div>
-    <div class="card"><b id="productCount">—</b><span>fixed-price products</span></div>
+    <div class="card"><b id="shownCount">—</b><span id="shownCountLabel">matching businesses</span></div>
+    <div class="card"><b id="allCount">—</b><span id="allCountLabel">total businesses</span></div>
+    <div class="card"><b id="onlineCount">—</b><span id="onlineCountLabel">online redemption</span></div>
+    <div class="card"><b id="productCount">—</b><span id="productCountLabel">fixed-price products</span></div>
   </section>
 
   <section class="table-shell" aria-label="Businesses table">
     <div class="table-meta">
-      <span>Click a column title to sort.</span>
+      <span id="sortHint">Click a column title to sort.</span>
       <span id="activeFilters">No filters applied</span>
     </div>
     <div class="table-wrap" tabindex="0">
@@ -417,7 +426,7 @@
     </div>
   </section>
 
-  <div class="source-note">Data source: public BuyMe catalog mirror refreshed weekly from BuyMe's public endpoints. Always verify current redemption terms on the official BuyMe page.</div>
+  <div class="source-note" id="sourceNote">Data source: public BuyMe catalog mirror refreshed weekly from BuyMe's public endpoints. Always verify current redemption terms on the official BuyMe page.</div>
 </main>
 
 <dialog id="details">
@@ -432,25 +441,233 @@
   const DATA_URL = 'https://raw.githubusercontent.com/eladkishon/buyme-mcp/refs/heads/main/data/buyme.json';
   const BUYME_PAGE = 'https://buyme.co.il/brands/13438757';
   const STORAGE_KEY = 'buyme-visible-columns-v2';
+  const LANG_STORAGE_KEY = 'buyme-interface-language';
   const $ = id => document.getElementById(id);
 
+  const copy = {
+    en: {
+      docTitle: 'BUYME Catalog Sorter',
+      eyebrow: 'BuyMe All catalog',
+      appTitle: 'Catalog Sorter',
+      appSubtitle: 'Find businesses quickly, choose the information you need, sort any visible column and export the results.',
+      labelSearch: 'Search',
+      searchPlaceholder: 'Name, description, address, category…',
+      labelCategory: 'Category',
+      labelSubcategory: 'Subcategory',
+      labelRegion: 'Region',
+      labelOnline: 'Redemption',
+      labelMulti: 'Multiple vouchers',
+      refresh: 'Refresh catalog',
+      clearFilters: 'Clear filters',
+      csv: 'Export filtered CSV',
+      xlsx: 'Export full Excel',
+      rowsLabel: 'Rows',
+      allRows: 'All',
+      essentialColumns: 'Essential',
+      allColumns: 'Show all',
+      resetColumns: 'Reset',
+      visibleColumnsText: 'visible columns · choose what to show',
+      shownCountLabel: 'matching businesses',
+      allCountLabel: 'total businesses',
+      onlineCountLabel: 'online redemption',
+      productCountLabel: 'fixed-price products',
+      sortHint: 'Click a column title to sort.',
+      sourceNote: "Data source: public BuyMe catalog mirror refreshed weekly from BuyMe's public endpoints. Always verify current redemption terms on the official BuyMe page.",
+      close: 'Close',
+      prev: 'Previous',
+      next: 'Next',
+      onlineAll: 'Online and in-store',
+      onlineTrue: 'Online redemption',
+      onlineFalse: 'In-store only',
+      multiAll: 'Any policy',
+      multiTrue: 'Accepted',
+      multiFalse: 'Not accepted',
+      multiUnknown: 'Unknown',
+      allCategories: 'All categories',
+      allSubcategories: 'All subcategories',
+      allRegions: 'All regions',
+      noFilters: 'No filters applied',
+      activeFilters: count => `${count} active filter${count === 1 ? '' : 's'}`,
+      downloading: 'Downloading catalog…',
+      updated: time => `Updated ${time}`,
+      loadError: message => `Could not load: ${message}. Check internet access and reopen the file.`,
+      noMatches: 'No businesses match these filters.',
+      pageInfo: (page, pages, start, end, total) => `Page ${page} of ${pages} · rows ${start}–${end} of ${total}`,
+      view: 'View',
+      open: 'Open',
+      websiteLink: 'Website',
+      yes: 'Yes',
+      no: 'No',
+      unknown: 'Unknown',
+      excelMissing: 'Excel export library did not load. CSV export still works.',
+      detailDescription: 'Description',
+      detailCategories: 'Categories',
+      detailSubcategories: 'Subcategories',
+      detailRegions: 'Regions',
+      detailAddress: 'Address',
+      detailPhone: 'Phone',
+      detailEmail: 'Email',
+      detailOnlineRedemption: 'Online redemption',
+      detailOnlineMoney: 'Online money voucher',
+      detailVoucherRange: 'Voucher range',
+      detailPaymentWay: 'Payment way',
+      detailMultipleVouchers: 'Multiple vouchers',
+      detailWebsite: 'Website',
+      detailStoreLocator: 'Store locator',
+      detailReservation: 'Reservation',
+      detailInstagram: 'Instagram',
+      detailFacebook: 'Facebook',
+      detailBuyMe: 'BuyMe',
+      detailOpenWebsite: 'Open website',
+      detailOpenStoreLocator: 'Open store locator',
+      detailOpenReservation: 'Open reservation',
+      detailOpenInstagram: 'Open Instagram',
+      detailOpenFacebook: 'Open Facebook',
+      detailOpenBuyMe: 'Open BuyMe listing',
+      detailProducts: 'Products',
+      detailNoProducts: 'None listed',
+      detailTerms: 'Redemption terms',
+      detailAbout: 'About',
+      columnDetails: 'Details',
+      columnName: 'Name',
+      columnDescription: 'Description',
+      columnCategories: 'Categories',
+      columnSubcategories: 'Subcategories',
+      columnRegions: 'Regions',
+      columnOnline: 'Online',
+      columnVoucherMin: 'Voucher min',
+      columnVoucherMax: 'Voucher max',
+      columnPayment: 'Payment',
+      columnMultipleVouchers: 'Multiple vouchers',
+      columnProducts: 'Products',
+      columnAddress: 'Address',
+      columnPhone: 'Phone',
+      columnWebsite: 'Website',
+      columnBuyMe: 'BuyMe'
+    },
+    he: {
+      docTitle: 'מיון קטלוג BUYME',
+      eyebrow: 'קטלוג BuyMe All',
+      appTitle: 'מיון קטלוג',
+      appSubtitle: 'מצאו עסקים במהירות, בחרו איזה מידע להציג, מיינו כל עמודה גלויה וייצאו את התוצאות.',
+      labelSearch: 'חיפוש',
+      searchPlaceholder: 'שם, תיאור, כתובת, קטגוריה…',
+      labelCategory: 'קטגוריה',
+      labelSubcategory: 'תת-קטגוריה',
+      labelRegion: 'אזור',
+      labelOnline: 'מימוש',
+      labelMulti: 'כמה שוברים',
+      refresh: 'רענון קטלוג',
+      clearFilters: 'ניקוי סינונים',
+      csv: 'ייצוא CSV מסונן',
+      xlsx: 'ייצוא Excel מלא',
+      rowsLabel: 'שורות',
+      allRows: 'הכול',
+      essentialColumns: 'בסיסי',
+      allColumns: 'הצג הכול',
+      resetColumns: 'איפוס',
+      visibleColumnsText: 'עמודות מוצגות · בחרו מה להציג',
+      shownCountLabel: 'עסקים תואמים',
+      allCountLabel: 'סה״כ עסקים',
+      onlineCountLabel: 'מימוש אונליין',
+      productCountLabel: 'מוצרים במחיר קבוע',
+      sortHint: 'לחצו על כותרת עמודה כדי למיין.',
+      sourceNote: 'מקור הנתונים: מראה ציבורית של קטלוג BuyMe שמתעדכנת שבועית מנקודות קצה ציבוריות של BuyMe. תמיד כדאי לוודא תנאי מימוש עדכניים באתר BuyMe הרשמי.',
+      close: 'סגירה',
+      prev: 'הקודם',
+      next: 'הבא',
+      onlineAll: 'אונליין ובחנות',
+      onlineTrue: 'מימוש אונליין',
+      onlineFalse: 'בחנות בלבד',
+      multiAll: 'כל מדיניות',
+      multiTrue: 'אפשרי',
+      multiFalse: 'לא אפשרי',
+      multiUnknown: 'לא ידוע',
+      allCategories: 'כל הקטגוריות',
+      allSubcategories: 'כל תתי-הקטגוריות',
+      allRegions: 'כל האזורים',
+      noFilters: 'אין סינונים פעילים',
+      activeFilters: count => `${count} סינונים פעילים`,
+      downloading: 'מוריד קטלוג…',
+      updated: time => `עודכן ${time}`,
+      loadError: message => `לא ניתן לטעון: ${message}. בדקו חיבור לאינטרנט ופתחו מחדש את הקובץ.`,
+      noMatches: 'אין עסקים שתואמים לסינונים האלה.',
+      pageInfo: (page, pages, start, end, total) => `עמוד ${page} מתוך ${pages} · שורות ${start}–${end} מתוך ${total}`,
+      view: 'צפייה',
+      open: 'פתיחה',
+      websiteLink: 'אתר',
+      yes: 'כן',
+      no: 'לא',
+      unknown: 'לא ידוע',
+      excelMissing: 'ספריית הייצוא ל-Excel לא נטענה. ייצוא CSV עדיין עובד.',
+      detailDescription: 'תיאור',
+      detailCategories: 'קטגוריות',
+      detailSubcategories: 'תתי-קטגוריות',
+      detailRegions: 'אזורים',
+      detailAddress: 'כתובת',
+      detailPhone: 'טלפון',
+      detailEmail: 'אימייל',
+      detailOnlineRedemption: 'מימוש אונליין',
+      detailOnlineMoney: 'שובר כסף אונליין',
+      detailVoucherRange: 'טווח שובר',
+      detailPaymentWay: 'אופן תשלום',
+      detailMultipleVouchers: 'כמה שוברים',
+      detailWebsite: 'אתר',
+      detailStoreLocator: 'איתור סניפים',
+      detailReservation: 'הזמנה',
+      detailInstagram: 'אינסטגרם',
+      detailFacebook: 'פייסבוק',
+      detailBuyMe: 'BuyMe',
+      detailOpenWebsite: 'פתיחת אתר',
+      detailOpenStoreLocator: 'פתיחת איתור סניפים',
+      detailOpenReservation: 'פתיחת הזמנה',
+      detailOpenInstagram: 'פתיחת אינסטגרם',
+      detailOpenFacebook: 'פתיחת פייסבוק',
+      detailOpenBuyMe: 'פתיחת עמוד BuyMe',
+      detailProducts: 'מוצרים',
+      detailNoProducts: 'לא רשומים מוצרים',
+      detailTerms: 'תנאי מימוש',
+      detailAbout: 'אודות',
+      columnDetails: 'פרטים',
+      columnName: 'שם',
+      columnDescription: 'תיאור',
+      columnCategories: 'קטגוריות',
+      columnSubcategories: 'תתי-קטגוריות',
+      columnRegions: 'אזורים',
+      columnOnline: 'אונליין',
+      columnVoucherMin: 'מינימום שובר',
+      columnVoucherMax: 'מקסימום שובר',
+      columnPayment: 'תשלום',
+      columnMultipleVouchers: 'כמה שוברים',
+      columnProducts: 'מוצרים',
+      columnAddress: 'כתובת',
+      columnPhone: 'טלפון',
+      columnWebsite: 'אתר',
+      columnBuyMe: 'BuyMe'
+    }
+  };
+
+  let uiLang = localStorage.getItem(LANG_STORAGE_KEY) === 'he' ? 'he' : 'en';
+  const ui = key => copy[uiLang][key] ?? copy.en[key] ?? key;
+  const setText = (id, key) => { const el = $(id); if (el) el.textContent = ui(key); };
+
   const columns = [
-    { key: 'details', label: 'Details', default: true, essential: true, sortable: false, cell: b => `<button class="detail-btn small" data-id="${b.id}">View</button>` },
-    { key: 'name', label: 'Name', default: true, essential: true, className: 'rtl name-cell', cell: b => `<b>${htmlEscape(b.name)}</b>` },
-    { key: 'slogan', label: 'Description', default: false, className: 'rtl wrap', cell: b => htmlEscape(b.slogan || '') },
-    { key: 'categoriesText', label: 'Categories', default: true, essential: true, className: 'rtl', cell: b => htmlEscape(b.categoriesText) },
-    { key: 'subcategoriesText', label: 'Subcategories', default: false, className: 'rtl', cell: b => htmlEscape(b.subcategoriesText) },
-    { key: 'regionsText', label: 'Regions', default: true, essential: true, className: 'rtl', cell: b => htmlEscape(b.regionsText) },
-    { key: 'onlineRedeem', label: 'Online', default: true, essential: true, cell: b => boolBadge(Boolean(b.onlineRedeem)) },
-    { key: 'voucherMin', label: 'Voucher min', default: true, cell: b => money(b.voucherMin) },
-    { key: 'voucherMax', label: 'Voucher max', default: true, cell: b => money(b.voucherMax) },
-    { key: 'paymentWay', label: 'Payment', default: false, cell: b => htmlEscape(b.paymentWay || '') },
-    { key: 'acceptsMultipleVouchers', label: 'Multiple vouchers', default: false, cell: b => boolBadge(b.acceptsMultipleVouchers) },
-    { key: 'productCount', label: 'Products', default: true, cell: b => Number(b.productCount || 0).toLocaleString() },
-    { key: 'address', label: 'Address', default: false, className: 'rtl wrap', cell: b => htmlEscape(b.address || '') },
-    { key: 'phone', label: 'Phone', default: false, cell: b => htmlEscape(b.phone || '') },
-    { key: 'website', label: 'Website', default: false, cell: b => link(b.website, 'Website') },
-    { key: 'url', label: 'BuyMe', default: true, essential: true, cell: b => link(b.url, 'Open') }
+    { key: 'details', labelKey: 'columnDetails', default: true, essential: true, sortable: false, cell: b => `<button class="detail-btn small" data-id="${b.id}">${ui('view')}</button>` },
+    { key: 'name', labelKey: 'columnName', default: true, essential: true, className: 'rtl name-cell', cell: b => `<b>${htmlEscape(b.name)}</b>` },
+    { key: 'slogan', labelKey: 'columnDescription', default: false, className: 'rtl wrap', cell: b => htmlEscape(b.slogan || '') },
+    { key: 'categoriesText', labelKey: 'columnCategories', default: true, essential: true, className: 'rtl', cell: b => htmlEscape(b.categoriesText) },
+    { key: 'subcategoriesText', labelKey: 'columnSubcategories', default: false, className: 'rtl', cell: b => htmlEscape(b.subcategoriesText) },
+    { key: 'regionsText', labelKey: 'columnRegions', default: true, essential: true, className: 'rtl', cell: b => htmlEscape(b.regionsText) },
+    { key: 'onlineRedeem', labelKey: 'columnOnline', default: true, essential: true, cell: b => boolBadge(Boolean(b.onlineRedeem)) },
+    { key: 'voucherMin', labelKey: 'columnVoucherMin', default: true, cell: b => money(b.voucherMin) },
+    { key: 'voucherMax', labelKey: 'columnVoucherMax', default: true, cell: b => money(b.voucherMax) },
+    { key: 'paymentWay', labelKey: 'columnPayment', default: false, cell: b => htmlEscape(b.paymentWay || '') },
+    { key: 'acceptsMultipleVouchers', labelKey: 'columnMultipleVouchers', default: false, cell: b => boolBadge(b.acceptsMultipleVouchers) },
+    { key: 'productCount', labelKey: 'columnProducts', default: true, cell: b => Number(b.productCount || 0).toLocaleString() },
+    { key: 'address', labelKey: 'columnAddress', default: false, className: 'rtl wrap', cell: b => htmlEscape(b.address || '') },
+    { key: 'phone', labelKey: 'columnPhone', default: false, cell: b => htmlEscape(b.phone || '') },
+    { key: 'website', labelKey: 'columnWebsite', default: false, cell: b => link(b.website, ui('websiteLink')) },
+    { key: 'url', labelKey: 'columnBuyMe', default: true, essential: true, cell: b => link(b.url, ui('open')) }
   ];
 
   const state = {
@@ -469,7 +686,8 @@
   function safeUrl(v) { try { const u = new URL(v); return /^https?:$/.test(u.protocol) ? u.href : ''; } catch { return ''; } }
   function money(v) { return v == null || v === '' ? '' : `₪${Number(v).toLocaleString('en-US')}`; }
   function join(a) { return Array.isArray(a) ? a.join(' | ') : ''; }
-  function boolText(v) { return v === true ? 'Yes' : v === false ? 'No' : 'Unknown'; }
+  function boolText(v) { return v === true ? ui('yes') : v === false ? ui('no') : ui('unknown'); }
+  function exportBoolText(v) { return v === true ? 'Yes' : v === false ? 'No' : 'Unknown'; }
   function boolBadge(v) {
     const cls = v === true ? 'yes-badge' : v === false ? 'no-badge' : 'unknown-badge';
     return `<span class="${cls}">${boolText(v)}</span>`;
@@ -513,7 +731,7 @@
   }
 
   async function load() {
-    $('status').textContent = 'Downloading catalog…';
+    $('status').textContent = ui('downloading');
     $('refresh').disabled = true;
     try {
       const res = await fetch(`${DATA_URL}?t=${Date.now()}`, { cache: 'no-store' });
@@ -527,9 +745,9 @@
       applyFilters();
       $('csv').disabled = false;
       $('xlsx').disabled = typeof XLSX === 'undefined';
-      $('status').textContent = `Updated ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      $('status').textContent = ui('updated')(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
     } catch (err) {
-      $('status').innerHTML = `<span class="error">Could not load: ${htmlEscape(err.message)}. Check internet access and reopen the file.</span>`;
+      $('status').innerHTML = `<span class="error">${htmlEscape(ui('loadError')(err.message))}</span>`;
     } finally {
       $('refresh').disabled = false;
     }
@@ -544,9 +762,9 @@
     if (values.includes(current)) $(id).value = current;
   }
   function populateFilters() {
-    fillSelect('category', unique('categories'), 'All categories');
-    fillSelect('subcategory', unique('subcategories'), 'All subcategories');
-    fillSelect('region', unique('regions'), 'All regions');
+    fillSelect('category', unique('categories'), ui('allCategories'));
+    fillSelect('subcategory', unique('subcategories'), ui('allSubcategories'));
+    fillSelect('region', unique('regions'), ui('allRegions'));
   }
 
   function activeFilterCount() {
@@ -554,7 +772,7 @@
   }
   function updateFilterStatus() {
     const count = activeFilterCount();
-    $('activeFilters').textContent = count ? `${count} active filter${count === 1 ? '' : 's'}` : 'No filters applied';
+    $('activeFilters').textContent = count ? ui('activeFilters')(count) : ui('noFilters');
     $('clearFilters').disabled = count === 0;
   }
   function applyFilters() {
@@ -600,7 +818,7 @@
     $('columnOptions').innerHTML = columns.map(c => `
       <label class="column-option">
         <input type="checkbox" value="${c.key}" ${state.visibleColumns.has(c.key) ? 'checked' : ''}>
-        <span>${htmlEscape(c.label)}</span>
+        <span>${htmlEscape(ui(c.labelKey))}</span>
       </label>`).join('');
 
     $('columnOptions').querySelectorAll('input').forEach(input => {
@@ -644,7 +862,7 @@
       const isSorted = state.sortKey === c.key;
       const ariaSort = isSorted ? (state.sortDir === 1 ? 'ascending' : 'descending') : 'none';
       const icon = isSorted ? `<span class="sort-icon" aria-hidden="true">${state.sortDir === 1 ? '▲' : '▼'}</span>` : '';
-      return `<th data-key="${c.key}" aria-sort="${ariaSort}" ${c.sortable === false ? 'data-static="true"' : ''}>${htmlEscape(c.label)}${icon}</th>`;
+      return `<th data-key="${c.key}" aria-sort="${ariaSort}" ${c.sortable === false ? 'data-static="true"' : ''}>${htmlEscape(ui(c.labelKey))}${icon}</th>`;
     }).join('') + '</tr>';
 
     [...$('table').tHead.querySelectorAll('th:not([data-static="true"])')].forEach(th => {
@@ -671,14 +889,20 @@
     const rows = state.filtered.slice(start, start + state.pageSize);
     const colspan = Math.max(1, visibleColumns().length);
 
-    $('table').tBodies[0].innerHTML = rows.map(rowHtml).join('') || `<tr><td class="empty-state" colspan="${colspan}">No businesses match these filters.</td></tr>`;
+    $('table').tBodies[0].innerHTML = rows.map(rowHtml).join('') || `<tr><td class="empty-state" colspan="${colspan}">${htmlEscape(ui('noMatches'))}</td></tr>`;
     [...document.querySelectorAll('.detail-btn')].forEach(btn => btn.onclick = () => showDetails(Number(btn.dataset.id)));
 
     $('shownCount').textContent = state.filtered.length.toLocaleString();
     $('allCount').textContent = state.businesses.length.toLocaleString();
     $('onlineCount').textContent = state.businesses.filter(b => b.onlineRedeem).length.toLocaleString();
     $('productCount').textContent = state.businesses.reduce((n, b) => n + (Number(b.productCount) || 0), 0).toLocaleString();
-    $('pageInfo').textContent = `Page ${state.page} of ${pages} · rows ${state.filtered.length ? start + 1 : 0}–${Math.min(start + state.pageSize, state.filtered.length)} of ${state.filtered.length.toLocaleString()}`;
+    $('pageInfo').textContent = ui('pageInfo')(
+      state.page,
+      pages,
+      state.filtered.length ? start + 1 : 0,
+      Math.min(start + state.pageSize, state.filtered.length),
+      state.filtered.length.toLocaleString()
+    );
     $('prev').disabled = state.page <= 1;
     $('next').disabled = state.page >= pages;
   }
@@ -691,15 +915,15 @@
     const b = state.businesses.find(x => Number(x.id) === id);
     if (!b) return;
     $('detailTitle').textContent = b.name;
-    const products = (b.products || []).map(p => `<li><b>${htmlEscape(p.name || '')}</b>${p.price != null ? ` — ${money(p.price)}` : ''}${p.description ? `<div class="long">${htmlEscape(p.description)}</div>` : ''}</li>`).join('') || '<li>None listed</li>';
+    const products = (b.products || []).map(p => `<li><b>${htmlEscape(p.name || '')}</b>${p.price != null ? ` — ${money(p.price)}` : ''}${p.description ? `<div class="long">${htmlEscape(p.description)}</div>` : ''}</li>`).join('') || `<li>${htmlEscape(ui('detailNoProducts'))}</li>`;
     const fields = [
-      ['Description', b.slogan], ['Categories', b.categoriesText], ['Subcategories', b.subcategoriesText], ['Regions', b.regionsText], ['Address', b.address], ['Phone', b.phone], ['Email', b.email],
-      ['Online redemption', boolText(Boolean(b.onlineRedeem))], ['Online money voucher', boolText(Boolean(b.onlineRedeemMoney))], ['Voucher range', b.voucher ? `${money(b.voucher.min)} – ${money(b.voucher.max)}` : ''],
-      ['Payment way', b.paymentWay], ['Multiple vouchers', boolText(b.acceptsMultipleVouchers)], ['Website', detailLink('Open website', b.website)], ['Store locator', detailLink('Open store locator', b.storeLocatorUrl)],
-      ['Reservation', detailLink('Open reservation', b.reservationUrl)], ['Instagram', detailLink('Open Instagram', b.instagram)], ['Facebook', detailLink('Open Facebook', b.facebook)], ['BuyMe', detailLink('Open BuyMe listing', b.url)]
+      [ui('detailDescription'), b.slogan], [ui('detailCategories'), b.categoriesText], [ui('detailSubcategories'), b.subcategoriesText], [ui('detailRegions'), b.regionsText], [ui('detailAddress'), b.address], [ui('detailPhone'), b.phone], [ui('detailEmail'), b.email],
+      [ui('detailOnlineRedemption'), boolText(Boolean(b.onlineRedeem))], [ui('detailOnlineMoney'), boolText(Boolean(b.onlineRedeemMoney))], [ui('detailVoucherRange'), b.voucher ? `${money(b.voucher.min)} – ${money(b.voucher.max)}` : ''],
+      [ui('detailPaymentWay'), b.paymentWay], [ui('detailMultipleVouchers'), boolText(b.acceptsMultipleVouchers)], [ui('detailWebsite'), detailLink(ui('detailOpenWebsite'), b.website)], [ui('detailStoreLocator'), detailLink(ui('detailOpenStoreLocator'), b.storeLocatorUrl)],
+      [ui('detailReservation'), detailLink(ui('detailOpenReservation'), b.reservationUrl)], [ui('detailInstagram'), detailLink(ui('detailOpenInstagram'), b.instagram)], [ui('detailFacebook'), detailLink(ui('detailOpenFacebook'), b.facebook)], [ui('detailBuyMe'), detailLink(ui('detailOpenBuyMe'), b.url)]
     ];
     $('detailBody').innerHTML = `<dl class="detail-grid">${fields.map(([k, v]) => `<dt>${htmlEscape(k)}</dt><dd>${v || ''}</dd>`).join('')}</dl>
-      <h3>Products</h3><ul>${products}</ul><h3>Redemption terms</h3><div class="long">${htmlEscape(b.terms || '')}</div><h3>About</h3><div class="long">${htmlEscape(b.about || '')}</div>`;
+      <h3>${htmlEscape(ui('detailProducts'))}</h3><ul>${products}</ul><h3>${htmlEscape(ui('detailTerms'))}</h3><div class="long">${htmlEscape(b.terms || '')}</div><h3>${htmlEscape(ui('detailAbout'))}</h3><div class="long">${htmlEscape(b.about || '')}</div>`;
     $('details').showModal();
   }
 
@@ -709,7 +933,7 @@
     ['acceptsMultipleVouchers', 'Accepts multiple vouchers'], ['productCount', 'Product count'], ['productsText', 'Products summary'], ['phone', 'Phone'], ['email', 'Email'], ['address', 'Address'],
     ['website', 'Website'], ['storeLocatorUrl', 'Store locator'], ['reservationUrl', 'Reservation'], ['instagram', 'Instagram'], ['facebook', 'Facebook'], ['url', 'BuyMe URL'], ['logo', 'Logo URL'], ['terms', 'Redemption terms'], ['about', 'About']
   ];
-  function exportRows(list) { return list.map(b => Object.fromEntries(exportColumns.map(([k, h]) => [h, typeof b[k] === 'boolean' ? boolText(b[k]) : b[k] ?? '']))); }
+  function exportRows(list) { return list.map(b => Object.fromEntries(exportColumns.map(([k, h]) => [h, typeof b[k] === 'boolean' ? exportBoolText(b[k]) : b[k] ?? '']))); }
   function csvEscape(v) { const s = text(v).replace(/\r?\n/g, ' '); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; }
   function downloadBlob(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); }
   function exportCSV() {
@@ -723,7 +947,7 @@
     ws['!autofilter'] = { ref: ws['!ref'] };
   }
   function exportXLSX() {
-    if (typeof XLSX === 'undefined') return alert('Excel export library did not load. CSV export still works.');
+    if (typeof XLSX === 'undefined') return alert(ui('excelMissing'));
     const wb = XLSX.utils.book_new();
     const businessRows = exportRows(state.businesses);
     const ws = XLSX.utils.json_to_sheet(businessRows);
@@ -731,7 +955,7 @@
     XLSX.utils.book_append_sheet(wb, ws, 'Businesses');
 
     const products = [];
-    state.businesses.forEach(b => (b.products || []).forEach(p => products.push({ 'Business ID': b.id, 'Business name': b.name, 'Product ID': p.id, 'Product name': p.name, 'Price': p.price ?? '', 'Price before discount': p.priceBeforeDiscount ?? '', 'Online redemption': boolText(Boolean(p.onlineRedeem)), 'Description': p.description ?? '', 'BuyMe URL': b.url })));
+    state.businesses.forEach(b => (b.products || []).forEach(p => products.push({ 'Business ID': b.id, 'Business name': b.name, 'Product ID': p.id, 'Product name': p.name, 'Price': p.price ?? '', 'Price before discount': p.priceBeforeDiscount ?? '', 'Online redemption': exportBoolText(Boolean(p.onlineRedeem)), 'Description': p.description ?? '', 'BuyMe URL': b.url })));
     const pws = XLSX.utils.json_to_sheet(products); setWidths(pws, products); XLSX.utils.book_append_sheet(wb, pws, 'Products');
 
     const categoryRows = (state.data.categories || []).map(c => ({ ID: c.id, Category: c.name, Position: c.pos ?? '', Subcategories: (c.subCategories || []).map(s => s.name).join(' | '), Businesses: state.businesses.filter(b => b.categoryIds?.includes(c.id)).length }));
@@ -745,6 +969,45 @@
     XLSX.writeFile(wb, 'buyme_catalog_full.xlsx');
   }
 
+  function setSelectOptionLabels(id, labels) {
+    const select = $(id);
+    [...select.options].forEach(option => {
+      if (Object.prototype.hasOwnProperty.call(labels, option.value)) {
+        option.textContent = labels[option.value];
+      }
+    });
+  }
+
+  function applyInterfaceLanguage() {
+    document.documentElement.lang = uiLang;
+    document.body.dataset.uiLang = uiLang;
+    document.title = ui('docTitle');
+
+    [
+      ['eyebrow', 'eyebrow'], ['appTitle', 'appTitle'], ['appSubtitle', 'appSubtitle'],
+      ['labelSearch', 'labelSearch'], ['labelCategory', 'labelCategory'], ['labelSubcategory', 'labelSubcategory'],
+      ['labelRegion', 'labelRegion'], ['labelOnline', 'labelOnline'], ['labelMulti', 'labelMulti'],
+      ['refresh', 'refresh'], ['clearFilters', 'clearFilters'], ['csv', 'csv'], ['xlsx', 'xlsx'],
+      ['rowsLabel', 'rowsLabel'], ['essentialColumns', 'essentialColumns'], ['allColumns', 'allColumns'],
+      ['resetColumns', 'resetColumns'], ['visibleColumnsText', 'visibleColumnsText'],
+      ['shownCountLabel', 'shownCountLabel'], ['allCountLabel', 'allCountLabel'],
+      ['onlineCountLabel', 'onlineCountLabel'], ['productCountLabel', 'productCountLabel'],
+      ['sortHint', 'sortHint'], ['sourceNote', 'sourceNote'], ['close', 'close'], ['prev', 'prev'], ['next', 'next']
+    ].forEach(([id, key]) => setText(id, key));
+
+    $('search').placeholder = ui('searchPlaceholder');
+    $('languageToggle').textContent = uiLang === 'en' ? 'עברית' : 'EN';
+    $('languageToggle').setAttribute('aria-label', uiLang === 'en' ? 'Switch interface to Hebrew' : 'Switch interface to English');
+    $('pageSize').querySelector('option[value="999999"]').textContent = ui('allRows');
+    setSelectOptionLabels('online', { '': ui('onlineAll'), 'true': ui('onlineTrue'), 'false': ui('onlineFalse') });
+    setSelectOptionLabels('multi', { '': ui('multiAll'), 'true': ui('multiTrue'), 'false': ui('multiFalse'), 'unknown': ui('multiUnknown') });
+
+    if (state.businesses.length) populateFilters();
+    renderColumnOptions();
+    updateFilterStatus();
+    if (state.businesses.length) render();
+  }
+
   ['search', 'category', 'subcategory', 'region', 'online', 'multi'].forEach(id => $(id).addEventListener(id === 'search' ? 'input' : 'change', applyFilters));
   $('pageSize').onchange = () => { state.page = 1; render(); };
   $('prev').onclick = () => { state.page--; render(); };
@@ -753,14 +1016,18 @@
   $('clearFilters').onclick = clearFilters;
   $('csv').onclick = exportCSV;
   $('xlsx').onclick = exportXLSX;
+  $('languageToggle').onclick = () => {
+    uiLang = uiLang === 'en' ? 'he' : 'en';
+    localStorage.setItem(LANG_STORAGE_KEY, uiLang);
+    applyInterfaceLanguage();
+  };
   $('close').onclick = () => $('details').close();
   $('essentialColumns').onclick = () => setVisibleColumns(essentialColumnKeys());
   $('allColumns').onclick = () => setVisibleColumns(columns.map(c => c.key));
   $('resetColumns').onclick = () => setVisibleColumns(defaultColumnKeys());
   $('details').addEventListener('click', event => { if (event.target === $('details')) $('details').close(); });
 
-  renderColumnOptions();
-  updateFilterStatus();
+  applyInterfaceLanguage();
   load();
 })();
 </script>
